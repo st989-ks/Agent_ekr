@@ -1,7 +1,6 @@
 package com.application.agent_ekr.lmm.managers
 
 interface LlmManager {
-    fun getToken(): Any
 
     fun countTokens(input: List<String>, model: String): Int
 

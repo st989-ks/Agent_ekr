@@ -1,10 +1,40 @@
 package com.application.agent_ekr.lmm.managers
 
-class GigaChatManager : LlmManager {
+import com.application.agent_ekr.lmm.models.GigaChatClientScope
+import com.application.agent_ekr.lmm.models.OauthRequest
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
+import java.util.UUID
 
-    override fun getToken(): Any {
-        TODO("Implement getToken()")
-    }
+class GigaChatManager(
+    tokenGigaChat: String,
+    scope: GigaChatClientScope
+) : LlmManager {
+
+    val api = GigaChatApi(
+        HttpClient(CIO) {
+            install(ContentNegotiation) {
+                json(Json {
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                    encodeDefaults = true
+                })
+            }
+            install(Logging) {
+                level = LogLevel.INFO
+            }
+        },
+        oauthBase = OauthRequest(
+            rqUid = UUID.randomUUID().toString(),
+            credentials = tokenGigaChat,
+            scope = scope
+        )
+    )
 
     override fun countTokens(input: List<String>, model: String): Int {
         TODO("Implement countTokens()")
@@ -62,7 +92,7 @@ class GigaChatManager : LlmManager {
         TODO("Implement getBatchJobStatus()")
     }
 
-    override fun getMessageStream(message:String) {
+    override fun getMessageStream(message: String) {
         TODO("Implement getMessageStream()")
     }
 }
