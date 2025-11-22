@@ -1,21 +1,27 @@
 package com.application.agent_ekr.lmm.models
 
-data class ChatResponse(
-    val choices: List<MessageChoice>,
-    val created: Long,
-    val model: String,
-    val `object`: String,
-    val usage: Usage
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+class ChatResponse(
+    @SerialName("choices") val choices: List<MessageChoice>,
+    @SerialName("created") val created: Long,
+    @SerialName("model") val model: String,
+    @SerialName("object") val obj: String,
+    @SerialName("usage") val usage: UsageTokens
 )
 
-data class MessageChoice(
-    val message: ChatMessage,
-    val index: Int,
-    val finish_reason: String
+@Serializable
+class MessageChoice(
+    @SerialName("message") val message: ChatMessage,
+    @SerialName("index") val index: Int,
+    @SerialName("finish_reason") val finishReason: String
 )
 
-data class Usage(
-    val prompt_tokens: Int,
-    val completion_tokens: Int,
-    val total_tokens: Int
+@Serializable
+class Usage(
+    @SerialName("prompt_tokens") val promptTokens: Int,
+    @SerialName("completion_tokens") val completionTokens: Int,
+    @SerialName("total_tokens") val totalTokens: Int
 )

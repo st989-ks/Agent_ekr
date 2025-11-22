@@ -2,6 +2,7 @@ package com.application.agent_ekr.lmm.managers
 
 import com.application.agent_ekr.lmm.models.ChatRequest
 import com.application.agent_ekr.lmm.models.ChatResponse
+import com.application.agent_ekr.lmm.models.ModelsResponse
 import com.application.agent_ekr.lmm.models.OauthRequest
 import com.application.agent_ekr.lmm.models.OauthResponse
 import io.ktor.client.HttpClient
@@ -20,7 +21,7 @@ class GigaChatApi(
 ) {
     var currentOauth: OauthResponse? = null
 
-    val isTokenExpired: Boolean get() = System.currentTimeMillis() + 3000L >= (currentOauth?.expires_at ?: 0)
+    val isTokenExpired: Boolean get() = System.currentTimeMillis() + 3000L >= (currentOauth?.expiresAt ?: 0)
 
     suspend fun getToken(): OauthResponse {
         if (isTokenExpired) {
@@ -44,7 +45,16 @@ class GigaChatApi(
         return currentOauth ?: throw Exception()
     }
 
-    suspend fun getModels()
+    suspend fun getModels(): ModelsResponse {
+        val token = getToken().accessToken
+        val response = httpClient.post(MODELS_ENDPOINT) {
+            headers {
+                append(HttpHeaders.Accept, ContentType.Application.Json.toString())
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }
+        return response.body()
+    }
 
     // Placeholder for counting tokens
     suspend fun countTokens(input: List<String>, model: String): Int {
@@ -78,7 +88,7 @@ class GigaChatApi(
 
     // Placeholder for processing chat completions
     suspend fun processChatCompletions(chatRequest: ChatRequest): ChatResponse {
-        val token = getToken().access_token
+        val token = getToken().accessToken
         val response = httpClient.post(CHAT_ENDPOINT) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $token")
@@ -129,5 +139,6 @@ class GigaChatApi(
         private const val BASE_URL = "https://ngw.devices.sberbank.ru:9443/"
         private const val AUTH_ENDPOINT = "$BASE_URL/api/v2/oauth"
         private const val CHAT_ENDPOINT = "$BASE_URL/api/v1/chat/completions"
+        private const val MODELS_ENDPOINT = "$BASE_URL/api/v1/models"
     }
 }

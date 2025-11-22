@@ -17,6 +17,7 @@ application {
 dependencies {
     implementation(projects.shared)
     implementation(libs.logback)
+
     implementation(libs.ktorServerCore)
     implementation(libs.ktorServerNetty)
 
@@ -26,6 +27,7 @@ dependencies {
     implementation(libs.ktorClientContentNegotiation)
     implementation(libs.ktorClientLogging)
     implementation(libs.ktorClientSerialization)
+
     implementation(libs.kotlinxSerializationJson)
 
     testImplementation(libs.ktorServerTestHost)

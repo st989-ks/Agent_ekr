@@ -1,7 +1,11 @@
 package com.application.agent_ekr.lmm.models
 
-data class ChatRequest(
-    val model: String,
-    val messages: List<ChatMessage>,
-    val stream: Boolean = false
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+class ChatRequest(
+    @SerialName("model") val model: String,
+    @SerialName("messages") val messages: List<ChatMessage>,
+    @SerialName("stream") val stream: Boolean = false
 )

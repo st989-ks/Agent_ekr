@@ -1,6 +1,10 @@
 package com.application.agent_ekr.lmm.models
 
-data class OauthResponse(
-    val access_token: String,
-    val expires_at: Long
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+class OauthResponse(
+    @SerialName("access_token") val accessToken: String,
+    @SerialName("expires_at") val expiresAt: Long
 )

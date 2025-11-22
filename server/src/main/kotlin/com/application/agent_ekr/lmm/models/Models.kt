@@ -1,19 +1,18 @@
 package com.application.agent_ekr.lmm.models
 
-/**
- * Data classes representing the structure of the `/models` endpoint response from GigaChat API.
- *
- * This corresponds to the OpenAPI specification defined in `.aditional/gigachat_api.yml`
- */
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-data class ModelsResponse(
-    val data: List<Model>,
-    val object: String // Type of entity returned ("list").
+@Serializable
+class ModelsResponse(
+    @SerialName("data") val data: List<Model>,
+    @SerialName("object") val obj: String
 )
 
-data class Model(
-    val id: String,       // Unique identifier of the model.
-    val object: String,   // Type of entity returned ("model").
-    val ownedBy: String,  // Owner of the model.
-    val type: String      // Type of model (e.g., "chat", "aicheck", "embedder").
+@Serializable
+class Model(
+    @SerialName("id") val id: String,
+    @SerialName("object") val obj: String,
+    @SerialName("owned_by") val ownedBy: String,
+    @SerialName("type") val type: String
 )
