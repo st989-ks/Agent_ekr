@@ -1,20 +1,14 @@
 package com.application.agent_ekr
 
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import com.application.agent_ekr.console.ConsoleApp
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
-fun main() {
-    embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
-        .start(wait = true)
-}
-
-fun Application.module() {
-    routing {
-        get("/") {
-            call.respondText("Ktor: ${Greeting().greet()}")
-        }
+suspend fun main() {
+    coroutineScope {
+        val asyncConsole = async { ConsoleApp().start() }
+//        val asyncBackend = async { BackendApp().start() }
+        awaitAll(asyncConsole, /* asyncBackend*/)
     }
 }
