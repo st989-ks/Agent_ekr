@@ -4,7 +4,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Тут описание эндпоинта в котором применяется и описание поей
+ * Represents a single message in a conversation.
+ *
+ * @property role Sender's role (system/user/assistant/function).
+ * @property content Message content.
  */
 @Serializable
 class ChatMessage(

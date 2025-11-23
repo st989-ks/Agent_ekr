@@ -4,16 +4,18 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * @param model Name of the model to generate completions.
- * @param messages Array of messages between the user and the model.
- * @param functionCall Mode of function calling ('none', 'auto', or specific function name).
- * @param functions Optional custom functions descriptions.
- * @param temperature Sampling temperature; higher values increase randomness.
- * @param topP Alternative sampling parameter controlling probability mass.
- * @param stream Whether to stream results incrementally.
- * @param maxTokens Maximum number of tokens to generate.
- * @param repetitionPenalty Penalization factor for repeated words.
- * @param updateInterval Interval between streaming updates.
+ * Request for chat completions.
+ *
+ * @property model Model name.
+ * @property messages List of messages.
+ * @property functionCall Function call settings.
+ * @property functions Available custom functions.
+ * @property temperature Temperature setting.
+ * @property topP Top-P sampling threshold.
+ * @property stream Streaming flag.
+ * @property maxTokens Maximum number of tokens.
+ * @property repetitionPenalty Repetition penalty.
+ * @property updateInterval Update interval for streaming.
  */
 @Serializable
 class ChatCompletionsRequest(
@@ -30,6 +32,50 @@ class ChatCompletionsRequest(
 )
 
 /**
+ * Describes a custom function.
+ *
+ * @property name Function name.
+ * @property description Function description.
+ * @property parameters Input parameters schema.
+ * @property returnParameters Output parameters schema.
+ * @property fewShotExamples Examples of function usage.
+ */
+@Serializable
+class CustomFunction(
+    @SerialName("name") val name: String,
+    @SerialName("description") val description: String,
+    @SerialName("parameters") val parameters: ParametersSchema,
+    @SerialName("return_parameters") val returnParameters: ReturnParamsSchema?,
+    @SerialName("few_shot_examples") val fewShotExamples: List<FewShotExample>?
+)
+
+/**
+ * Defines the input parameters schema.
+ *
+ * @property type Schema type.
+ * @property properties Properties map.
+ * @property required Required fields.
+ */
+@Serializable
+class ParametersSchema(
+    @SerialName("type") val type: String,
+    @SerialName("properties") val properties: Map<String, PropertyDefinition>,
+    @SerialName("required") val required: List<String>?
+)
+
+/**
+ * Defines the return parameters schema.
+ *
+ * @property type Schema type.
+ * @property properties Properties map.
+ */
+@Serializable
+class ReturnParamsSchema(
+    @SerialName("type") val type: String,
+    @SerialName("properties") val properties: Map<String, PropertyDefinition>
+)
+
+/**
  * Single message exchanged between the user and the model.
  *
  * @param role Role of the sender ('system', 'user', 'assistant', 'function').
@@ -39,39 +85,10 @@ class ChatCompletionsRequest(
  */
 @Serializable
 class Message(
-    @SerialName("role") val role: String,
+    @SerialName("role") val role: Role,
     @SerialName("content") val content: String,
     @SerialName("functions_state_id") val functionsStateId: String?,
     @SerialName("attachments") val attachments: List<String>?
-)
-
-/**
- * Describes a custom function available for invocation during generation.
- *
- * @param name Name of the custom function.
- * @param description Description of what the function does.
- * @param parameters Schema defining expected input parameters.
- */
-@Serializable
-data class CustomFunction(
-    @SerialName("name") val name: String,
-    @SerialName("description") val description: String,
-    @SerialName("parameters") val parameters: ParametersSchema,
-    @SerialName("return_parameters") val returnParameters: ReturnParamsSchema?,
-    @SerialName("few_shot_examples") val fewShotExamples: List<FewShotExample>?
-)
-
-/**
- * Defines the schema for input parameters of a custom function.
- *
- * @param type Type of the schema (usually 'object').
- * @param required Required fields in the schema.
- */
-@Serializable
-data class ParametersSchema(
-    @SerialName("type") val type: String,
-    @SerialName("properties") val properties: Map<String, PropertyDefinition>,
-    @SerialName("required") val required: List<String>?
 )
 
 /**
@@ -83,34 +100,11 @@ data class ParametersSchema(
  * @param enum Possible enumerated values.
  */
 @Serializable
-data class PropertyDefinition(
+class PropertyDefinition(
     @SerialName("type") val type: String,
     @SerialName("description") val description: String,
     @SerialName("format") val format: String?,
     @SerialName("enum") val enum: List<String>?
-)
-
-/**
- * Defines the schema for return parameters of a custom function.
- *
- * @param type Type of the schema (usually 'object').
- */
-@Serializable
-data class ReturnParamsSchema(
-    @SerialName("type") val type: String,
-    @SerialName("properties") val properties: Map<String, PropertyDefinition>
-)
-
-/**
- * Example pair showing how a custom function should be invoked.
- *
- * @param request User's request triggering the function.
- * @param params Arguments passed to the function.
- */
-@Serializable
-data class FewShotExample(
-    @SerialName("request") val request: String,
-    @SerialName("params") val params: Map<String, String>
 )
 
 /**
@@ -141,18 +135,4 @@ class Choice(
     @SerialName("message") val message: Message,
     @SerialName("index") val index: Int,
     @SerialName("finish_reason") val finishReason: String
-)
-
-/**
- * Details about token usage in the response.
- *
- * @param promptTokens Number of tokens in the prompt.
- * @param completionTokens Number of tokens in the completion.
- * @param totalTokens Total number of tokens processed.
- */
-@Serializable
-class UsageTokens(
-    @SerialName("prompt_tokens") val promptTokens: Int,
-    @SerialName("completion_tokens") val completionTokens: Int,
-    @SerialName("total_tokens") val totalTokens: Int
 )

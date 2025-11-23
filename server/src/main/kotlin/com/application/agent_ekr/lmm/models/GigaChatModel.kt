@@ -3,6 +3,11 @@ package com.application.agent_ekr.lmm.models
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Enumeration of supported GigaChat models.
+ *
+ * @property model Model name.
+ */
 @Serializable
 enum class GigaChatModel(val model: String) {
 

@@ -3,18 +3,23 @@ package com.application.agent_ekr.lmm.models
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Enumeration representing roles in a conversation.
+ *
+ * @property role Role name.
+ */
 @Serializable
 enum class Role(val role: String) {
 
     @SerialName("system")
-    ROLE_SYSTEM("system"),
+    SYSTEM("system"),
 
     @SerialName("user")
-    ROLE_USER("user"),
+    USER("user"),
 
     @SerialName("assistant")
-    ROLE_ASSISTANT("assistant"),
+    ASSISTANT("assistant"),
 
     @SerialName("function")
-    ROLE_FUNCTION("function")
+    FUNCTION("function")
 }
