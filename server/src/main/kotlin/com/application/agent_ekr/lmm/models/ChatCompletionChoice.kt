@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
  * @param finishReason Reason why generation stopped.
  */
 @Serializable
-class Choice(
+class ChatCompletionChoice(
     @SerialName("message") val message: Message,
     @SerialName("index") val index: Int,
     @SerialName("finish_reason") val finishReason: String

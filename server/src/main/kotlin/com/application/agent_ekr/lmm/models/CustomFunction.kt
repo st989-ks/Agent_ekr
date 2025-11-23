@@ -2,6 +2,7 @@ package com.application.agent_ekr.lmm.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 
 /**
@@ -17,7 +18,7 @@ import kotlinx.serialization.Serializable
 class CustomFunction(
     @SerialName("name") val name: String,
     @SerialName("description") val description: String,
-    @SerialName("parameters") val parameters: ParametersSchema,
-    @SerialName("return_parameters") val returnParameters: ReturnParamsSchema?,
-    @SerialName("few_shot_examples") val fewShotExamples: List<FewShotExample>?
+    @SerialName("parameters") val parameters: JsonObject,
+    @SerialName("few_shot_examples") val fewShotExamples: List<FewShotExample>? = null,
+    @SerialName("return_parameters") val returnParameters: JsonObject? = null
 )

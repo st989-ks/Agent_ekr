@@ -2,6 +2,7 @@ package com.application.agent_ekr.lmm.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 /**
  * Example pair showing how a custom function should be invoked.
@@ -12,5 +13,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 class FewShotExample(
     @SerialName("request") val request: String,
-    @SerialName("params") val params: Map<String, String>
+    @SerialName("params") val params: JsonObject
 )

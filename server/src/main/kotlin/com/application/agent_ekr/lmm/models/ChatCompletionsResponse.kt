@@ -13,8 +13,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 class ChatCompletionsResponse(
-    @SerialName("choices") val choices: List<Choice>,
+    @SerialName("choices") val choices: List<ChatCompletionChoice>,
     @SerialName("created") val created: Long,
-    @SerialName("model") val model: String,
+    @SerialName("model") val model: GigaChatModel,
+    @SerialName("object") val obj: String,
     @SerialName("usage") val usage: UsageTokens
 )

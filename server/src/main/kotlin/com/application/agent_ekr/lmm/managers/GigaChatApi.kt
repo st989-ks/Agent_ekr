@@ -1,59 +1,84 @@
 package com.application.agent_ekr.lmm.managers
 
-import com.application.agent_ekr.lmm.models.ChatRequest
-import com.application.agent_ekr.lmm.models.ChatResponse
+import com.application.agent_ekr.Utils.runCatchingSuspend
+import com.application.agent_ekr.lmm.models.ChatCompletionsRequest
+import com.application.agent_ekr.lmm.models.ChatCompletionsResponse
 import com.application.agent_ekr.lmm.models.ModelsResponse
 import com.application.agent_ekr.lmm.models.OauthRequest
 import com.application.agent_ekr.lmm.models.OauthResponse
+import com.application.agent_ekr.lmm.models.StreamChunk
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.append
 import io.ktor.http.headers
 import io.ktor.http.parameters
+import io.ktor.util.logging.error
+import io.ktor.utils.io.jvm.javaio.toInputStream
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.Json
+import org.slf4j.Logger
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.util.UUID
 
 class GigaChatApi(
     val httpClient: HttpClient,
     val oauthBase: OauthRequest,
+    val logger: Logger,
 ) {
     var currentOauth: OauthResponse? = null
 
-    val isTokenExpired: Boolean get() = System.currentTimeMillis() + 3000L >= (currentOauth?.expiresAt ?: 0)
+    val isTokenExpired: Boolean
+        get() = System.currentTimeMillis() + 3000L >= (currentOauth?.expiresAt ?: 0)
 
     suspend fun getToken(): OauthResponse {
         if (isTokenExpired) {
-            val response = httpClient.post(AUTH_ENDPOINT) {
-                headers {
-                    append(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded)
-                    append(HttpHeaders.Accept, ContentType.Application.Json)
-                    append("RqUID", oauthBase.rqUid)
-                    append(HttpHeaders.Authorization, "Bearer ${oauthBase.credentials}")
-                }
-                setBody(
-                    parameters {
-                        append("scope", oauthBase.scope.scope)
+            runCatchingSuspend {
+                val response = httpClient.post(AUTH_ENDPOINT) {
+                    headers {
+                        append(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded)
+                        append(HttpHeaders.Accept, ContentType.Application.Json)
+                        append("RqUID", oauthBase.rqUid)
+                        append(HttpHeaders.Authorization, "Bearer ${oauthBase.credentials}")
                     }
-                )
+                    setBody(
+                        parameters {
+                            append("scope", oauthBase.scope.scope)
+                        }
+                    )
+                }
+                currentOauth = response.body()
             }
-
-            currentOauth =  response.body()
+                .onFailure {
+                    logger.error(it)
+                    throw it
+                }
         }
 
-        return currentOauth ?: throw Exception()
+        return currentOauth ?: throw GigaChatApiException.TokenExpired()
     }
 
     suspend fun getModels(): ModelsResponse {
         val token = getToken().accessToken
-        val response = httpClient.post(MODELS_ENDPOINT) {
-            headers {
-                append(HttpHeaders.Accept, ContentType.Application.Json.toString())
-                append(HttpHeaders.Authorization, "Bearer $token")
+        return runCatchingSuspend {
+            val response = httpClient.post(MODELS_ENDPOINT) {
+                headers {
+                    append(HttpHeaders.Accept, ContentType.Application.Json.toString())
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
             }
+            response.body<ModelsResponse>()
         }
-        return response.body()
+            .getOrElse {
+                logger.error(it)
+                throw it
+            }
     }
 
     // Placeholder for counting tokens
@@ -86,17 +111,89 @@ class GigaChatApi(
         TODO("Implement validateFunction()")
     }
 
-    // Placeholder for processing chat completions
-    suspend fun processChatCompletions(chatRequest: ChatRequest): ChatResponse {
+    /**
+     * Processes chat completions by sending a request to the GigaChat API.
+     *
+     * This method sends a chat request to the GigaChat server and returns the response.
+     * It retrieves an access token, sets up the necessary headers, and posts the request.
+     *
+     * @param chatRequest The chat request object containing the messages and other parameters.
+     * @return The chat response object containing the generated messages and metadata.
+     * @throws Exception If there is an issue with the network connection or the API response.
+     */
+    suspend fun processChatCompletions(
+        chatRequest: ChatCompletionsRequest
+    ): ChatCompletionsResponse {
         val token = getToken().accessToken
-        val response = httpClient.post(CHAT_ENDPOINT) {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer $token")
-                append(HttpHeaders.Accept, ContentType.Application.Json.toString())
+        return runCatchingSuspend {
+            val response = httpClient.post(CHAT_ENDPOINT) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                    append(HttpHeaders.Accept, ContentType.Application.Json)
+
+                    append("X-Client-ID", oauthBase.clientId)
+                    append("X-Request-ID", UUID.randomUUID().toString())
+                    append("X-Session-ID", oauthBase.sessionId)
+                }
+                setBody(chatRequest)
             }
-            setBody(chatRequest)
+            response.body<ChatCompletionsResponse>()
+        }.getOrElse {
+            logger.error(it)
+            throw it
         }
-        return response.body()
+    }
+
+    /**
+     * Потоковая обработка чата (Server-Sent Events)
+     *
+     * @param chatRequest запрос
+     * @return Flow потока ответов
+     */
+    suspend fun processChatCompletionsStream(
+        chatRequest: ChatCompletionsRequest,
+    ): Flow<StreamChunk> = flow {
+        chatRequest.validate()
+        val modifiedRequest = chatRequest.copy(stream = true)
+        val token = getToken().accessToken
+        logger.debug("Starting streaming chat completion. Model: ${modifiedRequest.model}")
+        runCatchingSuspend {
+            val response = httpClient.post(CHAT_ENDPOINT) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                    append(HttpHeaders.Accept, ContentType.Text.EventStream)
+                    append("X-Client-ID", oauthBase.clientId)
+                    append("X-Request-ID", UUID.randomUUID().toString())
+                    append("X-Session-ID", oauthBase.sessionId)
+                }
+                setBody(modifiedRequest)
+            }
+
+            response.bodyAsChannel().toInputStream().use { inputStream ->
+                val reader = BufferedReader(InputStreamReader(inputStream))
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    val currentLine = line ?: continue
+                    if (currentLine.startsWith("data: ")) {
+                        val data = currentLine.substring(6)
+                        if (data == "[DONE]") {
+                            logger.debug("Stream completed with [DONE] marker")
+                            break
+                        }
+
+                        runCatching {
+                            val chunk: StreamChunk = Json.decodeFromString(data)
+                            emit(chunk)
+                        }.onFailure {
+                            logger.warn("Failed to parse stream chunk", it)
+                        }
+                    }
+                }
+            }
+        }.onFailure {
+            logger.error(it)
+            throw it
+        }
     }
 
     // Placeholder for retrieving available models

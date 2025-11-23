@@ -10,10 +10,12 @@ import kotlinx.serialization.Serializable
  * @param promptTokens Number of tokens in the prompt.
  * @param completionTokens Number of tokens in the completion.
  * @param totalTokens Total number of tokens processed.
+ * @param precachedPromptTokens ... .
  */
 @Serializable
 class UsageTokens(
     @SerialName("prompt_tokens") val promptTokens: Int,
     @SerialName("completion_tokens") val completionTokens: Int,
-    @SerialName("total_tokens") val totalTokens: Int
+    @SerialName("total_tokens") val totalTokens: Int,
+    @SerialName("precached_prompt_tokens") val precachedPromptTokens: Int = 0,
 )

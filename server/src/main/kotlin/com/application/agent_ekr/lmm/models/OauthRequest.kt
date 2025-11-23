@@ -11,6 +11,8 @@ import java.util.UUID
  */
 class OauthRequest(
     val rqUid: String = UUID.randomUUID().toString(),
+    val clientId : String = UUID.randomUUID().toString(),
+    val sessionId : String = UUID.randomUUID().toString(),
     val credentials: String = "client_credentials",
     val scope: GigaChatClientScope = GigaChatClientScope.PERSONAL
 )

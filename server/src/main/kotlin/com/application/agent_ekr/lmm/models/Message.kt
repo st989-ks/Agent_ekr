@@ -9,12 +9,14 @@ import kotlinx.serialization.Serializable
  * @param role Role of the sender ('system', 'user', 'assistant', 'function').
  * @param content Textual content of the message.
  * @param functionsStateId Identifier linking related function calls.
- * @param attachments Identifiers of attached files.
+ * @param functionCall ... .
+ * @param name ... .
  */
 @Serializable
 class Message(
-    @SerialName("role") val role: Role,
+    @SerialName("role") val role: MessageRole,
     @SerialName("content") val content: String,
-    @SerialName("functions_state_id") val functionsStateId: String?,
-    @SerialName("attachments") val attachments: List<String>?
+    @SerialName("functions_state_id") val functionsStateId: String? = null,
+    @SerialName("function_call") val functionCall: FunctionCall? = null,
+    @SerialName("name") val name: String? = null
 )

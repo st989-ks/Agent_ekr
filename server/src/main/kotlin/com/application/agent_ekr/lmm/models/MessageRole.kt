@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
  * @property role Role name.
  */
 @Serializable
-enum class Role(val role: String) {
+enum class MessageRole(val role: String) {
 
     @SerialName("system")
     SYSTEM("system"),
