@@ -16,10 +16,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
+import java.security.cert.X509Certificate
 import java.util.UUID
+import javax.net.ssl.X509TrustManager
 
 class GigaChatManager(
-    tokenGigaChat: String,
+    clientSecret: String,
     val logger: Logger,
     scope: GigaChatClientScope = GigaChatClientScope.PERSONAL,
 ) : LlmManager {
@@ -32,6 +34,15 @@ class GigaChatManager(
 
     val api = GigaChatApi(
         HttpClient(CIO) {
+            engine {
+                https {
+                    trustManager = object : X509TrustManager {
+                        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) = Unit
+                        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) = Unit
+                        override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+                    }
+                }
+            }
             install(ContentNegotiation) {
                 json(jsonApp)
             }
@@ -41,7 +52,7 @@ class GigaChatManager(
         },
         oauthBase = OauthRequest(
             rqUid = UUID.randomUUID().toString(),
-            credentials = tokenGigaChat,
+            credentials = clientSecret,
             scope = scope
         ),
         logger

@@ -7,17 +7,18 @@ import com.application.agent_ekr.lmm.models.ModelsResponse
 import com.application.agent_ekr.lmm.models.OauthRequest
 import com.application.agent_ekr.lmm.models.OauthResponse
 import com.application.agent_ekr.lmm.models.StreamChunk
+import com.application.agent_ekr.lmm.models.StreamChunkEmpty
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.forms.FormDataContent
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.append
-import io.ktor.http.headers
+import io.ktor.http.isSuccess
 import io.ktor.http.parameters
-import io.ktor.util.logging.error
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -40,23 +41,29 @@ class GigaChatApi(
     suspend fun getToken(): OauthResponse {
         if (isTokenExpired) {
             runCatchingSuspend {
-                val response = httpClient.post(AUTH_ENDPOINT) {
-                    headers {
-                        append(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded)
-                        append(HttpHeaders.Accept, ContentType.Application.Json)
-                        append("RqUID", oauthBase.rqUid)
-                        append(HttpHeaders.Authorization, "Bearer ${oauthBase.credentials}")
-                    }
+                val response = httpClient.post(AUTH_URL) {
+                    header(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded)
+                    header(HttpHeaders.Accept, ContentType.Application.Json)
+                    header("RqUID", oauthBase.rqUid)
+                    header(HttpHeaders.Authorization, "Basic ${oauthBase.credentials}")
                     setBody(
-                        parameters {
-                            append("scope", oauthBase.scope.scope)
-                        }
+                        FormDataContent(
+                            parameters {
+                                append("grant_type", "client_credentials")
+                                append("scope", oauthBase.scope.scope)
+                            }
+                        )
                     )
                 }
-                currentOauth = response.body()
+
+                logger.info("===============================")
+
+                logger.info("OAuth response status: ${response.status}")
+                if (response.status.isSuccess()) {
+                    currentOauth = response.body()
+                }
             }
                 .onFailure {
-                    logger.error(it)
                     throw it
                 }
         }
@@ -68,15 +75,12 @@ class GigaChatApi(
         val token = getToken().accessToken
         return runCatchingSuspend {
             val response = httpClient.post(MODELS_ENDPOINT) {
-                headers {
-                    append(HttpHeaders.Accept, ContentType.Application.Json.toString())
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                }
+                header(HttpHeaders.Accept, ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $token")
             }
             response.body<ModelsResponse>()
         }
             .getOrElse {
-                logger.error(it)
                 throw it
             }
     }
@@ -127,21 +131,17 @@ class GigaChatApi(
         val token = getToken().accessToken
         return runCatchingSuspend {
             val response = httpClient.post(CHAT_ENDPOINT) {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                    append(HttpHeaders.Accept, ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $token")
+                header(HttpHeaders.Accept, ContentType.Application.Json)
 
-                    append("X-Client-ID", oauthBase.clientId)
-                    append("X-Request-ID", UUID.randomUUID().toString())
-                    append("X-Session-ID", oauthBase.sessionId)
-                }
+//                header("X-Client-ID", oauthBase.clientId)
+                header("X-Request-ID", oauthBase.rqUid)
+                header("X-Session-ID", oauthBase.sessionId)
                 setBody(chatRequest)
             }
             response.body<ChatCompletionsResponse>()
-        }.getOrElse {
-            logger.error(it)
-            throw it
         }
+            .getOrElse { throw it }
     }
 
     /**
@@ -159,13 +159,11 @@ class GigaChatApi(
         logger.debug("Starting streaming chat completion. Model: ${modifiedRequest.model}")
         runCatchingSuspend {
             val response = httpClient.post(CHAT_ENDPOINT) {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                    append(HttpHeaders.Accept, ContentType.Text.EventStream)
-                    append("X-Client-ID", oauthBase.clientId)
-                    append("X-Request-ID", UUID.randomUUID().toString())
-                    append("X-Session-ID", oauthBase.sessionId)
-                }
+                header(HttpHeaders.ContentType, ContentType.Application.Json)
+                header(HttpHeaders.Authorization, "Bearer $token")
+                header(HttpHeaders.Accept, ContentType.Text.EventStream)
+                header("X-Request-ID", oauthBase.rqUid)
+                header("X-Session-ID", oauthBase.sessionId)
                 setBody(modifiedRequest)
             }
 
@@ -173,10 +171,12 @@ class GigaChatApi(
                 val reader = BufferedReader(InputStreamReader(inputStream))
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
+                    emit(StreamChunkEmpty)
                     val currentLine = line ?: continue
                     if (currentLine.startsWith("data: ")) {
                         val data = currentLine.substring(6)
                         if (data == "[DONE]") {
+                            emit(StreamChunkEmpty)
                             logger.debug("Stream completed with [DONE] marker")
                             break
                         }
@@ -190,10 +190,8 @@ class GigaChatApi(
                     }
                 }
             }
-        }.onFailure {
-            logger.error(it)
-            throw it
         }
+            .onFailure { throw it }
     }
 
     // Placeholder for retrieving available models
@@ -233,7 +231,8 @@ class GigaChatApi(
 
 
     companion object {
-        private const val BASE_URL = "https://ngw.devices.sberbank.ru:9443/"
+        private const val AUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
+        private const val BASE_URL = "https://gigachat.devices.sberbank.ru"
         private const val AUTH_ENDPOINT = "$BASE_URL/api/v2/oauth"
         private const val CHAT_ENDPOINT = "$BASE_URL/api/v1/chat/completions"
         private const val MODELS_ENDPOINT = "$BASE_URL/api/v1/models"

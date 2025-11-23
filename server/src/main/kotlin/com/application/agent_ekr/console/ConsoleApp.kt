@@ -1,11 +1,9 @@
 package com.application.agent_ekr.console
 
 import com.application.agent_ekr.Env
+import com.application.agent_ekr.Utils.runCatchingSuspend
 import com.application.agent_ekr.lmm.managers.GigaChatManager
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import io.ktor.util.logging.error
 import org.slf4j.Logger
 
 class ConsoleApp(
@@ -13,7 +11,7 @@ class ConsoleApp(
 ) {
 
     val gigaChatApi = GigaChatManager(
-        tokenGigaChat = Env.GIGACHAT_TOKEN,
+        clientSecret = Env.GIGACHAT_TOKEN,
         logger = logger
     )
 
@@ -42,11 +40,15 @@ class ConsoleApp(
     }
 
     private suspend fun handleChat(text: String) {
-        println("Запрос: $text")
         println("Ответ: \n")
-        gigaChatApi.sendMessageStream(text).collect {
-            print(it)
+        runCatchingSuspend {
+            gigaChatApi.sendMessageStream(text).collect {
+                print(it)
+            }
+        }.onFailure {
+            logger.error(it)
         }
+
     }
 
 }

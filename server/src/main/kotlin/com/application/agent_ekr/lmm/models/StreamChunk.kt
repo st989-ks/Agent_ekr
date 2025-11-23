@@ -11,3 +11,9 @@ class StreamChunk(
     @SerialName("object") val obj: String? = null,
     @SerialName("usage") val usage: UsageTokens? = null
 )
+
+val StreamChunkEmpty = StreamChunk(
+    choices = listOf(
+        StreamChoice(delta = StreamDelta(content = "\n"), index = -1)
+    )
+)
