@@ -2,7 +2,7 @@ package com.application.agent_ekr.console
 
 import com.application.agent_ekr.Env
 import com.application.agent_ekr.Utils.runCatchingSuspend
-import com.application.agent_ekr.lmm.managers.GigaChatManager
+import com.application.agent_ekr.gigachat.GigaChatManager
 import io.ktor.util.logging.error
 import org.slf4j.Logger
 
@@ -19,6 +19,7 @@ class ConsoleApp(
         println("Console ready. Type /exit to quit.")
 
         while (true) {
+            println("_______________________________________")
             print("> ")
             val input = readlnOrNull() ?: continue
 

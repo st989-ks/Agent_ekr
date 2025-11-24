@@ -1,0 +1,22 @@
+package com.application.agent_ekr.gigachat.models
+
+import com.application.agent_ekr.gigachat.GigaChatModel
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+/**
+ * Response received from the `/chat/completions` endpoint.
+ *
+ * @param choices Generated completions.
+ * @param created Timestamp of creation.
+ * @param model Used model identifier.
+ * @param usage Information about token usage.
+ */
+@Serializable
+class ChatCompletionsResponse(
+    @SerialName("choices") val choices: List<ChatCompletionChoice>,
+    @SerialName("created") val created: Long,
+    @SerialName("model") val model: GigaChatModel,
+    @SerialName("object") val obj: String,
+    @SerialName("usage") val usage: UsageTokens
+)
