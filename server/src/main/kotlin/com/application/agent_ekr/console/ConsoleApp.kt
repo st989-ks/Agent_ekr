@@ -61,7 +61,7 @@ class ConsoleApp(
      */
     private fun printWelcome() {
         println(ConsoleStyler.separator())
-        println(ConsoleStyler.success("🤖 GigaChat Console Agent"))
+        println(ConsoleStyler.success("🤖 Console Agent"))
         println(ConsoleStyler.info("Type /help for commands"))
         println(ConsoleStyler.info("Type /exit to quit"))
         println(ConsoleStyler.separator())

@@ -1,12 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- 
+        Logback configuration for Kotlin console application
+        Requirements:
+        - Rolling file appender: logs/app.log, 10MB max size, daily rollover, 7-day history
+        - Console appender: errors only to System.err with custom pattern
+        - Root logger: INFO level, both appenders
+        - Package-specific loggers: suppress noise from Spring and Ktor
+    -->
+
+    <!-- FILE Appender: Rolling file with size and time-based policies -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/app.log</file>
+        
+        <!-- Rolling policy: daily rollover with size triggering -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Filename pattern includes date and index -->
+            <fileNamePattern>logs/app.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            
+            <!-- Time-based policy: rollover daily -->
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <!-- Maximum file size before rollover -->
+                <maxFileSize>10MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            
+            <!-- Keep 7 days of history -->
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        
+        <!-- Log pattern: timestamp, thread, level, logger, message -->
         <encoder>
-            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="trace">
-        <appender-ref ref="STDOUT"/>
+
+    <!-- CONSOLE_ERRORS Appender: Only WARN and above to System.err -->
+    <appender name="CONSOLE_ERRORS" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- Target System.err (not stdout) -->
+        <target>System.err</target>
+        
+        <!-- Custom pattern with warning symbol -->
+        <encoder>
+            <pattern>⚠️  %msg%n</pattern>
+        </encoder>
+        
+        <!-- Filter: Only allow WARN level and above -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
+    <!-- Root logger configuration -->
+    <root level="INFO">
+        <!-- Both appenders: FILE for all logs, CONSOLE_ERRORS for warnings/errors -->
+        <appender-ref ref="FILE" />
+        <appender-ref ref="CONSOLE_ERRORS" />
     </root>
-    <logger name="org.eclipse.jetty" level="INFO"/>
-    <logger name="io.netty" level="INFO"/>
+
+    <!-- Package-specific loggers to suppress noise -->
+    
+    <!-- Spring Framework: Reduce logging to WARN level -->
+    <logger name="org.springframework" level="WARN" />
+    
+    <!-- Ktor framework: Reduce logging to WARN level -->
+    <logger name="io.ktor" level="WARN" />
+    
+    <!-- Ktor server: Reduce logging to WARN level -->
+    <logger name="io.ktor.server" level="WARN" />
+
 </configuration>
