@@ -19,7 +19,7 @@ class GigaChatManager(
     scope: GigaChatClientScope = GigaChatClientScope.PERSONAL,
 ) : LlmManager {
 
-    val api = GigaChatApi(
+    private val api = GigaChatApi(
         oauthBase = OauthRequest(
             rqUid = UUID.randomUUID().toString(),
             credentials = clientSecret,
@@ -32,6 +32,9 @@ class GigaChatManager(
         return api.getModels().data.map { it.id }
     }
 
+    /**
+     * Backward compatible method - single string input
+     */
     override suspend fun sendMessageStream(message: String): Flow<String> = api
         .processChatCompletionsStream(
             ChatCompletionsRequest(
@@ -47,19 +50,32 @@ class GigaChatManager(
         .map {
             it.choices
                 .mapNotNull { choice -> choice.delta.content }
-                .joinToString()
+                .joinToString("")
         }
 
-    // TODO: Implement enhanced sendMessageStream with ChatInput support
+    /**
+     * Enhanced method with universal ChatInput support
+     */
     override suspend fun sendMessageStream(input: ChatInput): Flow<String> {
         val gigaChatRequest = GigaChatAdapter.run {
             input.toGigaChatRequest()
         }
+        
+        logger.debug("Sending enhanced chat request with ${input.messages.size} messages")
+        if (input.tools?.isNotEmpty() == true) {
+            logger.debug("Including ${input.tools.size} tools in request")
+        }
+        
         return api.processChatCompletionsStream(gigaChatRequest)
-            .map {
-                it.choices
+            .map { chunk ->
+                // Extract content from stream chunks
+                val content = chunk.choices
                     .mapNotNull { choice -> choice.delta.content }
-                    .joinToString()
+                    .joinToString("")
+                
+                // TODO: Handle function calls from stream if GigaChat supports streaming function calls
+                // For now, we only return content
+                content
             }
     }
 }

@@ -1,19 +1,26 @@
 package com.application.agent_ekr.gigachat.adapters
 
+import com.application.agent_ekr.FunctionCallMode
 import com.application.agent_ekr.gigachat.GigaChatModel
 import com.application.agent_ekr.gigachat.models.ChatCompletionsRequest
 import com.application.agent_ekr.gigachat.models.CustomFunction
+import com.application.agent_ekr.gigachat.models.FunctionCall
 import com.application.agent_ekr.gigachat.models.Message
 import com.application.agent_ekr.gigachat.models.MessageRole
 import com.application.agent_ekr.models.common.ChatInput
 import com.application.agent_ekr.models.common.ChatMessage
+import com.application.agent_ekr.models.common.ToolCall
 import com.application.agent_ekr.models.common.ToolDefinition
+import com.application.agent_ekr.models.common.ToolChoice
 
 /**
  * Adapter for converting universal Input to GigaChat-specific Message
  */
 object GigaChatAdapter {
-    // TODO: Implement complete mapping from ChatInput to ChatCompletionsRequest
+    
+    /**
+     * Converts universal ChatInput to GigaChat-specific ChatCompletionsRequest
+     */
     fun ChatInput.toGigaChatRequest(): ChatCompletionsRequest {
         val gigaMessages = this.messages.map { chatMessage ->
             when (chatMessage) {
@@ -25,11 +32,19 @@ object GigaChatAdapter {
                     role = MessageRole.USER,
                     content = chatMessage.content
                 )
-                is ChatMessage.Assistant -> Message(
-                    role = MessageRole.ASSISTANT,
-                    content = chatMessage.content
-                    // TODO: Handle tool calls when GigaChat supports them
-                )
+                is ChatMessage.Assistant -> {
+                    val functionCall = chatMessage.toolCalls?.firstOrNull()?.let { toolCall ->
+                        FunctionCall(
+                            name = toolCall.function.name,
+                            arguments = toolCall.function.arguments
+                        )
+                    }
+                    Message(
+                        role = MessageRole.ASSISTANT,
+                        content = chatMessage.content,
+                        functionCall = functionCall
+                    )
+                }
                 is ChatMessage.Tool -> Message(
                     role = MessageRole.FUNCTION,
                     content = chatMessage.content,
@@ -41,25 +56,72 @@ object GigaChatAdapter {
         // Convert tools to GigaChat functions if available
         val gigaFunctions = this.tools?.map { it.toGigaChatFunction() }
 
+        // Map tool choice to function call mode
+        val functionCallMode = when (this.toolChoice) {
+            ToolChoice.AUTO -> FunctionCallMode.AUTO
+            ToolChoice.NONE -> FunctionCallMode.NONE
+            ToolChoice.REQUIRED -> FunctionCallMode.AUTO // GigaChat doesn't have "required" mode
+            null -> null
+        }
+
+        // Safely map model string to GigaChatModel
+        val gigaChatModel = try {
+            this.model?.let { modelName ->
+                GigaChatModel.entries.find { it.model == modelName || it.name == modelName }
+            } ?: GigaChatModel.GIGA_CHAT_2
+        } catch (e: Exception) {
+            GigaChatModel.GIGA_CHAT_2
+        }
+
         return ChatCompletionsRequest(
-            model = this.model?.let { GigaChatModel.valueOf(it) } ?: GigaChatModel.GIGA_CHAT_2,
+            model = gigaChatModel,
             messages = gigaMessages,
             stream = this.stream,
+            functionCall = functionCallMode,
             functions = gigaFunctions,
             temperature = this.parameters?.temperature,
             topP = this.parameters?.topP,
             maxTokens = this.parameters?.maxTokens,
             repetitionPenalty = this.parameters?.frequencyPenalty
-            // TODO: Map remaining parameters as needed
+            // Note: GigaChat uses repetition_penalty instead of frequency_penalty/presence_penalty
         )
     }
 
-    // TODO: Implement tool definition to GigaChat function mapping
+    /**
+     * Converts universal ToolDefinition to GigaChat-specific CustomFunction
+     */
     fun ToolDefinition.toGigaChatFunction(): CustomFunction {
         return CustomFunction(
             name = this.name,
             description = this.description,
-            parameters = this.parameters
+            parameters = this.parameters,
+            fewShotExamples = null, // TODO: Implement few-shot examples if needed
+            returnParameters = null // TODO: Implement return parameters if needed
         )
     }
+
+    /**
+     * Converts GigaChat FunctionCall to universal ToolCall
+     */
+    fun FunctionCall.toUniversalToolCall(id: String = generateId()): ToolCall {
+        return ToolCall(
+            id = id,
+            function = com.application.agent_ekr.models.common.FunctionCall(
+                name = this.name,
+                arguments = this.arguments
+            )
+        )
+    }
+
+    /**
+     * Converts universal ToolCall to GigaChat FunctionCall
+     */
+    fun ToolCall.toGigaChatFunctionCall(): FunctionCall {
+        return FunctionCall(
+            name = this.function.name,
+            arguments = this.function.arguments
+        )
+    }
+
+    private fun generateId(): String = "call_${System.currentTimeMillis()}"
 }
