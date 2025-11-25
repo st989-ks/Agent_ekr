@@ -24,7 +24,7 @@ class CalculatorTool : ConsoleTool {
 
     override suspend fun execute(arguments: String): String {
         // TODO: Implement safe expression evaluation
-        return "Calculator result for: $arguments"
+        return "Calculator result"
     }
 }
 
@@ -47,6 +47,6 @@ class SearchTool : ConsoleTool {
 
     override suspend fun execute(arguments: String): String {
         // TODO: Implement search
-        return "Search results for: $arguments"
+        return "Search results"
     }
 }
