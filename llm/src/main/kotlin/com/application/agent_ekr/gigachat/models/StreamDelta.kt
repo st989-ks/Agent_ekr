@@ -1,6 +1,5 @@
 package com.application.agent_ekr.gigachat.models
 
-import com.application.agent_ekr.MessageRole
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

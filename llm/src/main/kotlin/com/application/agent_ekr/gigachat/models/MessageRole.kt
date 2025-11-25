@@ -16,7 +16,7 @@ enum class MessageRole(val role: String) {
     @SerialName("function") FUNCTION("function");
     
     companion object {
-        fun fromString(role: String): MessageRole = values().find { it.role == role } 
+        fun fromString(role: String): MessageRole = entries.find { it.role == role }
             ?: throw IllegalArgumentException("Unknown role: $role")
     }
 }
