@@ -115,6 +115,17 @@ object ConsoleStyler {
         "$VERY_DIM$text$RESET"
 
     /**
+     * Formats command text with bold bright blue color.
+     *
+     * Example: ConsoleStyler.command("/help") -> bold bright blue text
+     *
+     * @param text The command text to format
+     * @return Formatted string ready for console output
+     */
+    fun command(text: String): String =
+        "$BOLD$BRIGHT_BLUE$text$RESET"
+
+    /**
      * Creates a horizontal line separator.
      *
      * Example: ConsoleStyler.separator() -> "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
