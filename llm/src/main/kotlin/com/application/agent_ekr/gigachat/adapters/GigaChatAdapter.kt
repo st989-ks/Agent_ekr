@@ -37,6 +37,7 @@ object GigaChatAdapter {
                     content = chatMessage.content
                 )
                 is ChatMessage.Assistant -> {
+
                     val functionCall = chatMessage.toolCalls?.firstOrNull()?.let { toolCall ->
                         FunctionCall(
                             name = toolCall.function.name,
@@ -95,20 +96,9 @@ object GigaChatAdapter {
      * Converts universal ToolDefinition to GigaChat-specific CustomFunction
      */
     fun ToolDefinition.toGigaChatFunction(): CustomFunction {
-        // Convert description to JsonObject if needed
-        val descriptionJson = this.description?.let { desc ->
-            buildJsonObject {
-                put("type", "string")
-                put("description", desc)
-            }
-        }
-        
         return CustomFunction(
             name = this.name,
-            description = descriptionJson ?: buildJsonObject {
-                put("type", "string")
-                put("description", "")
-            },
+            description = this.description,
             parameters = this.parameters,
             fewShotExamples = null, // TODO: Implement few-shot examples if needed
             returnParameters = null // TODO: Implement return parameters if needed
