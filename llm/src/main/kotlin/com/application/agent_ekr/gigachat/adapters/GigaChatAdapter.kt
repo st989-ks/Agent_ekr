@@ -12,6 +12,10 @@ import com.application.agent_ekr.models.common.ChatMessage
 import com.application.agent_ekr.models.common.ToolCall
 import com.application.agent_ekr.models.common.ToolDefinition
 import com.application.agent_ekr.models.common.ToolChoice
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Adapter for converting universal Input to GigaChat-specific Message
@@ -91,9 +95,20 @@ object GigaChatAdapter {
      * Converts universal ToolDefinition to GigaChat-specific CustomFunction
      */
     fun ToolDefinition.toGigaChatFunction(): CustomFunction {
+        // Convert description to JsonObject if needed
+        val descriptionJson = this.description?.let { desc ->
+            buildJsonObject {
+                put("type", "string")
+                put("description", desc)
+            }
+        }
+        
         return CustomFunction(
             name = this.name,
-            description = this.description,
+            description = descriptionJson ?: buildJsonObject {
+                put("type", "string")
+                put("description", "")
+            },
             parameters = this.parameters,
             fewShotExamples = null, // TODO: Implement few-shot examples if needed
             returnParameters = null // TODO: Implement return parameters if needed

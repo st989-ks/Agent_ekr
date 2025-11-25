@@ -60,7 +60,10 @@ class EnhancedArchitectureTest {
         
         assertNotNull(gigaFunction)
         assertEquals("test_tool", gigaFunction.name)
-        assertEquals("A test tool", gigaFunction.description)
+        // Description is now a JsonObject, so we need to check its structure
+        assertNotNull(gigaFunction.description)
+        assertEquals("string", gigaFunction.description?.get("type")?.jsonPrimitive?.content)
+        assertEquals("A test tool", gigaFunction.description?.get("description")?.jsonPrimitive?.content)
         assertNotNull(gigaFunction.parameters)
     }
     
