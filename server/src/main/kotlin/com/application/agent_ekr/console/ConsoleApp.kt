@@ -16,15 +16,15 @@ class ConsoleApp(
     )
 
     suspend fun start() {
-        println("Console ready. Type /exit to quit.")
+        println(ConsoleStyler.success("Console ready. Type /exit to quit."))
 
         while (true) {
-            println("_______________________________________")
+            println(ConsoleStyler.separator())
             print("> ")
             val input = readlnOrNull() ?: continue
 
             if (input == "/exit") {
-                println("Exiting console...")
+                println(ConsoleStyler.info("Exiting console..."))
                 return
             }
 
@@ -37,19 +37,20 @@ class ConsoleApp(
     }
 
     private fun handleCommand(cmd: String) {
-        println("Команда: $cmd")
+        println(ConsoleStyler.info("Команда: $cmd"))
     }
 
     private suspend fun handleChat(text: String) {
-        println("Ответ: \n")
+        println(ConsoleStyler.aiMessage("Ответ: \n"))
         runCatchingSuspend {
             gigaChatApi.sendMessageStream(text).collect {
                 print(it)
             }
+            println() // Add a newline after the response is complete
         }.onFailure {
             logger.error(it)
+            println(ConsoleStyler.error("Error: ${it.message}"))
         }
-
     }
 
 }
