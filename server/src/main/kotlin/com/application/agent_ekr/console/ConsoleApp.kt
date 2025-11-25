@@ -19,22 +19,21 @@ class ConsoleApp(
         logger = logger
     )
 
-    private val tools = mutableMapOf<String, ConsoleTool>()
+    private val toolRegistry = ConsoleToolRegistry(logger, ConsoleUIConfig.development())
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
      * Register a tool to be available for the LLM to use
      */
     fun registerTool(tool: ConsoleTool) {
-        tools[tool.definition.name] = tool
-        logger.debug("Registered tool: ${tool.definition.name}")
+        toolRegistry.registerTool(tool)
     }
 
     /**
      * Get all registered tool definitions
      */
     private fun getToolDefinitions(): List<ToolDefinition> {
-        return tools.values.map { it.definition }
+        return toolRegistry.getAllToolDefinitions()
     }
 
     suspend fun start() {
@@ -67,19 +66,11 @@ class ConsoleApp(
     }
 
     private fun listTools() {
-        if (tools.isEmpty()) {
-            println(ConsoleStyler.warning("No tools registered"))
-            return
-        }
-
+        val toolsList = toolRegistry.listTools()
         println(
             ConsoleStyler.messageBlock(
                 "Available Tools",
-                tools.values.joinToString("\n\n") { tool ->
-                    "Name: ${tool.definition.name}\n" +
-                            "Description: ${tool.definition.description}\n" +
-                            "Parameters: ${tool.definition.parameters}"
-                }
+                toolsList
             )
         )
     }
@@ -124,16 +115,11 @@ class ConsoleApp(
      * Execute a tool call and return the result
      */
     private suspend fun executeToolCall(toolCall: ToolCall): String {
-        val tool = tools[toolCall.function.name]
-        return if (tool != null) {
-            println(ConsoleStyler.info("Executing tool: ${tool.definition.name}"))
-            runCatchingSuspend {
-                tool.execute(toolCall.function.arguments)
-            }.getOrElse { error ->
-                "Error executing tool: ${error.message}"
-            }
-        } else {
-            "Tool not found: ${toolCall.function.name}"
+        val result = toolRegistry.executeTool(toolCall.function.name, toolCall.function.arguments)
+        return when (result) {
+            is ToolExecutionResult.Success -> result.result
+            is ToolExecutionResult.NotFound -> "Tool not found: ${result.toolName}"
+            is ToolExecutionResult.Error -> "Error executing ${result.toolName}: ${result.error}"
         }
     }
 }
