@@ -10,18 +10,17 @@ import com.application.agent_ekr.gigachat.models.MessageRole
 import com.application.agent_ekr.models.common.ChatInput
 import com.application.agent_ekr.models.common.ChatMessage
 import com.application.agent_ekr.models.common.ToolCall
-import com.application.agent_ekr.models.common.ToolDefinition
 import com.application.agent_ekr.models.common.ToolChoice
+import com.application.agent_ekr.models.common.ToolDefinition
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 
 /**
  * Adapter for converting universal Input to GigaChat-specific Message
  */
 object GigaChatAdapter {
-    
+
     /**
      * Converts universal ChatInput to GigaChat-specific ChatCompletionsRequest
      */
@@ -32,17 +31,29 @@ object GigaChatAdapter {
                     role = MessageRole.SYSTEM,
                     content = chatMessage.content
                 )
+
                 is ChatMessage.User -> Message(
                     role = MessageRole.USER,
                     content = chatMessage.content
                 )
+
                 is ChatMessage.Assistant -> {
 
                     val functionCall = chatMessage.toolCalls?.firstOrNull()?.let { toolCall ->
-                        FunctionCall(
-                            name = toolCall.function.name,
-                            arguments = toolCall.function.arguments
-                        )
+                        try {
+                            val argumentsJson =
+                                Json.parseToJsonElement(toolCall.function.arguments) as? JsonObject
+                            FunctionCall(
+                                name = toolCall.function.name,
+                                arguments = argumentsJson
+                            )
+                        } catch (e: Exception) {
+                            // If parsing fails, create an empty JsonObject
+                            FunctionCall(
+                                name = toolCall.function.name,
+                                arguments = buildJsonObject { }
+                            )
+                        }
                     }
                     Message(
                         role = MessageRole.ASSISTANT,
@@ -50,6 +61,7 @@ object GigaChatAdapter {
                         functionCall = functionCall
                     )
                 }
+
                 is ChatMessage.Tool -> Message(
                     role = MessageRole.FUNCTION,
                     content = chatMessage.content,
@@ -109,11 +121,12 @@ object GigaChatAdapter {
      * Converts GigaChat FunctionCall to universal ToolCall
      */
     fun FunctionCall.toUniversalToolCall(id: String = generateId()): ToolCall {
+        val argumentsString = this.arguments?.toString() ?: "{}"
         return ToolCall(
             id = id,
             function = com.application.agent_ekr.models.common.FunctionCall(
                 name = this.name,
-                arguments = this.arguments
+                arguments = argumentsString
             )
         )
     }
@@ -122,9 +135,14 @@ object GigaChatAdapter {
      * Converts universal ToolCall to GigaChat FunctionCall
      */
     fun ToolCall.toGigaChatFunctionCall(): FunctionCall {
+        val argumentsJson = try {
+            Json.parseToJsonElement(this.function.arguments) as? JsonObject
+        } catch (e: Exception) {
+            buildJsonObject { }
+        }
         return FunctionCall(
             name = this.function.name,
-            arguments = this.function.arguments
+            arguments = argumentsJson
         )
     }
 

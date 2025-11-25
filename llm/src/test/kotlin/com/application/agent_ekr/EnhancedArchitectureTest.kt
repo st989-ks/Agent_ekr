@@ -6,8 +6,8 @@ import com.application.agent_ekr.models.common.ChatInput
 import com.application.agent_ekr.models.common.ChatMessage
 import com.application.agent_ekr.models.common.GenerationParameters
 import com.application.agent_ekr.models.common.ToolDefinition
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -40,7 +40,7 @@ class EnhancedArchitectureTest {
         assertEquals("user", gigaRequest.messages[1].role.role)
         assertEquals(0.7, gigaRequest.temperature)
         assertEquals(100, gigaRequest.maxTokens)
-        assertTrue(gigaRequest.stream == true)
+        assertEquals(gigaRequest.stream, true)
     }
     
     @Test
@@ -62,16 +62,19 @@ class EnhancedArchitectureTest {
         assertEquals("test_tool", gigaFunction.name)
         // Description is now a JsonObject, so we need to check its structure
         assertNotNull(gigaFunction.description)
-        assertEquals("string", gigaFunction.description?.get("type")?.jsonPrimitive?.content)
-        assertEquals("A test tool", gigaFunction.description?.get("description")?.jsonPrimitive?.content)
+        assertEquals("string", gigaFunction.parameters["type"]?.jsonPrimitive?.content)
+        assertEquals("Test parameter", gigaFunction.parameters["description"]?.jsonPrimitive?.content)
         assertNotNull(gigaFunction.parameters)
     }
     
     @Test
     fun testFunctionCallConversion() {
+        val argumentsJson = buildJsonObject {
+            put("param", "value")
+        }
         val gigaFunctionCall = FunctionCall(
             name = "test_function",
-            arguments = """{"param": "value"}"""
+            arguments = argumentsJson
         )
         
         val universalToolCall = GigaChatAdapter.run {
@@ -80,7 +83,9 @@ class EnhancedArchitectureTest {
         
         assertNotNull(universalToolCall)
         assertEquals("test_function", universalToolCall.function.name)
-        assertEquals("""{"param": "value"}""", universalToolCall.function.arguments)
+        // The arguments should be converted to a JSON string
+        assertTrue(universalToolCall.function.arguments.contains("\"param\""))
+        assertTrue(universalToolCall.function.arguments.contains("value"))
         assertTrue(universalToolCall.id.startsWith("call_"))
     }
     
@@ -90,7 +95,7 @@ class EnhancedArchitectureTest {
             id = "call_123",
             function = com.application.agent_ekr.models.common.FunctionCall(
                 name = "test_tool",
-                arguments = "{}"
+                arguments = """{"param": "value"}"""
             )
         )
         
@@ -110,6 +115,7 @@ class EnhancedArchitectureTest {
         assertEquals("assistant", gigaRequest.messages[1].role.role)
         assertNotNull(gigaRequest.messages[1].functionCall)
         assertEquals("test_tool", gigaRequest.messages[1].functionCall?.name)
+        assertNotNull(gigaRequest.messages[1].functionCall?.arguments)
     }
     
     @Test
