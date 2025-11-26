@@ -59,6 +59,11 @@ object ConsoleStyler {
     fun aiMessage(text: String): String =
         "$BOLD$BRIGHT_CYAN$text$RESET"
 
+
+
+    fun bold(text: String): String =
+        "$BOLD$text$RESET"
+
     /**
      * Formats success message with green color and checkmark prefix.
      *

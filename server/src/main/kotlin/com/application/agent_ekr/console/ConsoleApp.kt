@@ -3,6 +3,7 @@ package com.application.agent_ekr.console
 import com.application.agent_ekr.Env
 import com.application.agent_ekr.Utils.runCatchingSuspend
 import com.application.agent_ekr.gigachat.GigaChatManager
+import com.application.agent_ekr.console.commands.TestMCPCommand
 import org.slf4j.Logger
 
 class ConsoleApp(
@@ -34,6 +35,25 @@ class ConsoleApp(
 
             // Skip empty input
             if (input.isBlank()) {
+                continue
+            }
+
+            // Handle MCP test command
+            if (input.trim() == "/testmcp") {
+                val testMCPCommand = TestMCPCommand(this)
+                val result = testMCPCommand.execute()
+                when (result) {
+                    is CommandResult.Output -> println(result.message)
+                    is CommandResult.Success -> {
+                        // Command succeeded silently, do nothing
+                    }
+                    is CommandResult.Exit -> {
+                        println("Goodbye!")
+                        return
+                    }
+                    is CommandResult.Error -> println(ConsoleStyler.error(result.message))
+                    is CommandResult.Unknown -> println(ConsoleStyler.error("Unknown command: '${result.command}'. Type /help"))
+                }
                 continue
             }
 
