@@ -25,6 +25,8 @@ dependencies {
     implementation(libs.ktorSerializationKotlinxJson)
     implementation(libs.kotlinxSerializationJson)
 
+    implementation(libs.modelcontextprotocol)
+
     testImplementation(libs.ktorServerTestHost)
     testImplementation(libs.kotlinTestJunit)
 }

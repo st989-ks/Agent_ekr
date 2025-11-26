@@ -17,8 +17,9 @@ dependencies {
     implementation(libs.ktorClientContentNegotiation)
     implementation(libs.ktorClientLogging)
     implementation(libs.ktorClientSerialization)
-
     implementation(libs.kotlinxSerializationJson)
+
+    implementation(libs.modelcontextprotocol)
 
     testImplementation(libs.ktorServerTestHost)
     testImplementation(libs.kotlinTestJunit)

@@ -8,6 +8,7 @@ kotlinxCoroutines = "1.10.2"
 ktor = "3.3.1"
 logback = "1.5.20"
 kotlinxSerialization = "1.7.3"
+mcpVersion = "0.8.0"
 
 [libraries]
 kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -29,6 +30,8 @@ ktorClientSerialization = { group = "io.ktor", name = "ktor-client-serialization
 ktorClientContentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktorSerializationKotlinxJson = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktorClientLogging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
+
+modelcontextprotocol = { group = "io.modelcontextprotocol", name = "kotlin-sdk", version.ref = "mcpVersion" }
 
 [plugins]
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
