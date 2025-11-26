@@ -82,7 +82,7 @@ class ConsoleApp(
         }
         
         println()
-        println(ConsoleStyler.messageBlock("Response", ""))
+        println(ConsoleStyler.messageBlock("Request", text))
         
         runCatchingSuspend {
             gigaChatApi.sendMessageStream(text).collect {

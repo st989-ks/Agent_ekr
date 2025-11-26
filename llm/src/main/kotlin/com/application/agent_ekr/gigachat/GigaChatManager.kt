@@ -2,12 +2,10 @@ package com.application.agent_ekr.gigachat
 
 import com.application.agent_ekr.LlmManager
 import com.application.agent_ekr.gigachat.adapters.GigaChatAdapter
-import com.application.agent_ekr.gigachat.models.ChatCompletionsRequest
 import com.application.agent_ekr.gigachat.models.GigaChatClientScope
-import com.application.agent_ekr.gigachat.models.Message
-import com.application.agent_ekr.gigachat.models.MessageRole
 import com.application.agent_ekr.gigachat.models.OauthRequest
 import com.application.agent_ekr.models.common.ChatInput
+import com.application.agent_ekr.models.common.ChatMessage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.slf4j.Logger
@@ -35,23 +33,8 @@ class GigaChatManager(
     /**
      * Backward compatible method - single string input
      */
-    override suspend fun sendMessageStream(message: String): Flow<String> = api
-        .processChatCompletionsStream(
-            ChatCompletionsRequest(
-                model = GigaChatModel.GIGA_CHAT_2,
-                messages = listOf(
-                    Message(
-                        role = MessageRole.USER,
-                        content = message,
-                    )
-                )
-            )
-        )
-        .map {
-            it.choices
-                .mapNotNull { choice -> choice.delta.content }
-                .joinToString("")
-        }
+    override suspend fun sendMessageStream(message: String): Flow<String> =
+        sendMessageStream(ChatInput(messages = listOf(ChatMessage.User(message))))
 
     /**
      * Enhanced method with universal ChatInput support
@@ -60,19 +43,19 @@ class GigaChatManager(
         val gigaChatRequest = GigaChatAdapter.run {
             input.toGigaChatRequest()
         }
-        
+
         logger.debug("Sending enhanced chat request with ${input.messages.size} messages")
         if (input.tools?.isNotEmpty() == true) {
             logger.debug("Including ${input.tools.size} tools in request")
         }
-        
+
         return api.processChatCompletionsStream(gigaChatRequest)
             .map { chunk ->
                 // Extract content from stream chunks
                 val content = chunk.choices
                     .mapNotNull { choice -> choice.delta.content }
                     .joinToString("")
-                
+
                 // TODO: Handle function calls from stream if GigaChat supports streaming function calls
                 // For now, we only return content
                 content

@@ -199,12 +199,10 @@ class GigaChatApi(
                 val reader = BufferedReader(InputStreamReader(inputStream))
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
-                    emit(streamChunkEmpty)
                     val currentLine = line ?: continue
                     if (currentLine.startsWith("data: ")) {
                         val data = currentLine.substring(6)
                         if (data == "[DONE]") {
-                            emit(streamChunkEmpty)
                             logger.debug("Stream completed with [DONE] marker")
                             break
                         }
