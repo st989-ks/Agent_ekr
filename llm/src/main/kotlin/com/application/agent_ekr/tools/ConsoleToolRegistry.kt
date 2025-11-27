@@ -1,4 +1,4 @@
-package com.application.agent_ekr.console
+package com.application.agent_ekr.tools
 
 import com.application.agent_ekr.models.common.ToolDefinition
 import org.slf4j.Logger
@@ -11,7 +11,6 @@ import org.slf4j.Logger
  */
 class ConsoleToolRegistry(
     private val logger: Logger,
-    private val config: ConsoleUIConfig
 ) {
     private val tools = mutableMapOf<String, ConsoleTool>()
 
@@ -23,9 +22,6 @@ class ConsoleToolRegistry(
     fun registerTool(tool: ConsoleTool) {
         tools[tool.definition.name] = tool
         logger.debug("Registered tool: ${tool.definition.name}")
-        if (config.debugMode) {
-            println(ConsoleStyler.success("Registered tool: ${tool.definition.name}"))
-        }
     }
 
     /**
@@ -58,9 +54,6 @@ class ConsoleToolRegistry(
         val tool = tools[name]
         return if (tool != null) {
             try {
-                if (config.debugMode) {
-                    println(ConsoleStyler.debug("Executing tool: $name with arguments: $arguments"))
-                }
                 val result = tool.execute(arguments)
                 ToolExecutionResult.Success(result)
             } catch (e: Exception) {

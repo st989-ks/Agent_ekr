@@ -1,9 +1,5 @@
-package com.application.agent_ekr.console.commands
+package com.application.agent_ekr.tools
 
-import com.application.agent_ekr.console.CommandResult
-import com.application.agent_ekr.console.ConsoleApp
-import com.application.agent_ekr.console.ConsoleStyler
-import com.application.agent_ekr.console.ConsoleTool
 import com.application.agent_ekr.models.common.ToolDefinition
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.client.StdioClientTransport
@@ -27,13 +23,12 @@ import javax.swing.UIManager.put
  * Command handler for testing MCP server connection and tool registration
  */
 class TestMCPCommand(
-    private val consoleApp: ConsoleApp
 ) {
     private val logger: Logger = LoggerFactory.getLogger(TestMCPCommand::class.java)
 
-    suspend fun execute(): CommandResult {
+    suspend fun getToolsListName(): String {
         return try {
-            println("${ConsoleStyler.info("[*]")} Starting MCP server connection...")
+            println("[*] Starting MCP server connection...")
 
             // Start the MCP server process
             val process = withContext(Dispatchers.IO) {
@@ -53,23 +48,23 @@ class TestMCPCommand(
             )
 
             // Connect to the MCP server
-            println("${ConsoleStyler.info("[*]")} Connecting to MCP server...")
+            println("[*] Connecting to MCP server...")
             client.connect(transport)
-            println("${ConsoleStyler.success("[✓]")} Connected to MCP server")
+            println("[✓] Connected to MCP server")
 
             // List available tools
-            println("${ConsoleStyler.info("[*]")} Fetching available tools...")
+            println("[*] Fetching available tools...")
             val toolsResponse = client.listTools()
             val tools = toolsResponse.tools
 
             if (tools.isEmpty()) {
-                println("${ConsoleStyler.warning("[!]")} No tools found in MCP server")
+                println("[!] No tools found in MCP server")
                 client.close()
                 process.destroy()
-                return CommandResult.Output("No tools available from MCP server")
+                return "No tools available from MCP server"
             }
 
-            println("${ConsoleStyler.success("[✓]")} Found ${tools.size} tools")
+            println("[✓] Found ${tools.size} tools")
 
             // Register each tool as a ConsoleTool
             var registeredCount = 0
@@ -86,64 +81,30 @@ class TestMCPCommand(
                         }
                     )
 
-                    // Create and register the MCP tool
-                    val mcpTool = MCPConsoleTool(
-                        definition = toolDefinition,
-                        client = client,
-                        toolName = tool.name
-                    )
-
-                    consoleApp.registerTool(mcpTool)
                     registeredCount++
-                    println("${ConsoleStyler.success("[✓]")} Registered tool: ${tool.name}")
+                    println("[✓] Registered tool: ${tool.name}")
                 } catch (e: Exception) {
-                    println("${ConsoleStyler.error("[✗]")} Failed to register tool ${tool.name}: ${e.message}")
+                    println("[✗] Failed to register tool ${tool.name}: ${e.message}")
                     logger.error("Failed to register MCP tool ${tool.name}", e)
                 }
             }
 
             // Display summary
-            println("\n${ConsoleStyler.success("[✓]")} Successfully registered $registeredCount/${tools.size} tools")
-            println("\n${ConsoleStyler.bold("Available Tools:")}")
+            println("\n[✓] Successfully registered $registeredCount/${tools.size} tools")
+            println("\nAvailable Tools:")
             tools.forEach { tool ->
-                println("  ${ConsoleStyler.command(tool.name)} - ${tool.description ?: "No description"}")
+                println("  ${tool.name} - ${tool.description ?: "No description"}")
             }
 
             // Note: We don't close the client here to keep tools functional
             // The tools will use the same client instance
 
-            CommandResult.Output("MCP tool registration completed. Registered $registeredCount tools.")
+            "MCP tool registration completed. Registered $registeredCount tools."
 
         } catch (e: Exception) {
-            println("${ConsoleStyler.error("[✗]")} MCP connection failed: ${e.message}")
+            println("[✗] MCP connection failed: ${e.message}")
             logger.error("MCP connection failed", e)
-            CommandResult.Error("MCP connection failed: ${e.message}")
-        }
-    }
-}
-
-/**
- * MCP ConsoleTool implementation that delegates execution to the MCP server
- */
-class MCPConsoleTool(
-    override val definition: ToolDefinition,
-    private val client: Client,
-    private val toolName: String
-) : ConsoleTool {
-
-    override suspend fun execute(arguments: String): String {
-        return try {
-            val result = client.callTool(
-                CallToolRequest(
-                    params = CallToolRequestParams(
-                        name = toolName,
-                        arguments = Json.parseToJsonElement(arguments).jsonObject
-                    )
-                )
-            )
-            result.content.firstOrNull()?.toString() ?: "Tool executed successfully (no output)"
-        } catch (e: Exception) {
-            "Tool execution failed: ${e.message}"
+            "MCP connection failed: ${e.message}"
         }
     }
 }

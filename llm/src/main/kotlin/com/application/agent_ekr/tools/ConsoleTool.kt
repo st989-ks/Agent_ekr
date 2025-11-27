@@ -1,4 +1,4 @@
-package com.application.agent_ekr.console
+package com.application.agent_ekr.tools
 
 import com.application.agent_ekr.models.common.ToolDefinition
 

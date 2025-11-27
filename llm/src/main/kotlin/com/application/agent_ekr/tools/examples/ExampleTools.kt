@@ -1,6 +1,6 @@
-package com.application.agent_ekr.console.tools
+package com.application.agent_ekr.tools.examples
 
-import com.application.agent_ekr.console.ConsoleTool
+import com.application.agent_ekr.tools.ConsoleTool
 import com.application.agent_ekr.models.common.ToolDefinition
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put

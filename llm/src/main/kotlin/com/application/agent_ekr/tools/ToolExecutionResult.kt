@@ -1,4 +1,4 @@
-package com.application.agent_ekr.console
+package com.application.agent_ekr.tools
 
 /**
  * ToolExecutionResult represents the outcome of a tool execution.

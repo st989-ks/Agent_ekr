@@ -1,5 +1,7 @@
 package com.application.agent_ekr.console
 
+import com.application.agent_ekr.tools.ConsoleToolRegistry
+import com.application.agent_ekr.tools.TestMCPCommand
 import org.slf4j.Logger
 
 /**
@@ -40,7 +42,7 @@ class ConsoleCommandHandler(
      * }
      * ```
      */
-    fun handleCommand(input: String): CommandResult {
+    suspend fun handleCommand(input: String): CommandResult {
         // Store command in history
         commandHistory.add(input)
         
@@ -57,6 +59,7 @@ class ConsoleCommandHandler(
         
         // Route to appropriate handler
         return when (commandName) {
+            "test" -> handleTest(arguments)
             "help" -> handleHelp()
             "tools" -> handleTools()
             "debug" -> handleDebug(arguments)
@@ -74,6 +77,7 @@ class ConsoleCommandHandler(
      */
     private fun handleHelp(): CommandResult {
         val helpText = """
+            |${ConsoleStyler.command("/test")} — test api experimental
             |${ConsoleStyler.command("/help")} — show this help message
             |${ConsoleStyler.command("/tools")} — list available tools
             |${ConsoleStyler.command("/debug")} [on|off|true|false|1|0] — toggle debug mode
@@ -93,6 +97,23 @@ class ConsoleCommandHandler(
         val toolsList = toolRegistry.listTools()
         val formattedOutput = "Available tools:\n${ConsoleStyler.info(toolsList)}"
         return CommandResult.Output(formattedOutput)
+    }
+
+    private suspend fun handleTest(arguments: String): CommandResult {
+//        TODO("""
+//            To implement extensible tests by the type of call was /test,
+//             we got here, and then any names for the tests will be implemented,
+//              for example mcptools, that is, the user will enter "/test mcptools"
+//               and some experimental work will be performed""")
+
+        return  when (arguments) {
+            "mcptools" -> {
+                val testMCPCommand = TestMCPCommand()
+
+                CommandResult.Output(testMCPCommand.getToolsListName())
+            }
+            else -> CommandResult.Output("TODO()")
+        }
     }
     
     /**

@@ -1,49 +1,68 @@
 package com.application.agent_ekr.tools
 
+import com.application.agent_ekr.tools.mcp.MCPToolRegistry
 import com.application.agent_ekr.models.common.ToolCall
 import com.application.agent_ekr.models.common.ToolDefinition
 import com.application.agent_ekr.persistence.ToolResult
 
-/**
- * Tool registry for managing available tools
- */
 class ToolRegistry {
     private val tools = mutableMapOf<String, Tool>()
+    private val mcpRegistry = MCPToolRegistry()
 
     fun register(tool: Tool) {
         tools[tool.definition.name] = tool
     }
 
-    fun getTool(name: String): Tool? = tools[name]
+    fun registerMCPTools(mcpRegistry: MCPToolRegistry) {
+        // MCP tools are handled separately
+    }
 
-    fun getAvailableTools(): List<ToolDefinition> = tools.values.map { it.definition }
+    fun getTool(name: String): Tool? = tools[name] 
 
-    // TODO: Implement robust tool execution with comprehensive error handling
+    fun getAvailableTools(): List<ToolDefinition> = 
+        tools.values.map { it.definition } + mcpRegistry.getToolDefinitions()
+
     suspend fun executeToolCall(toolCall: ToolCall): ToolResult {
-        val tool = getTool(toolCall.function.name)
-            ?: return ToolResult(
-                toolCallId = toolCall.id,
-                toolName = toolCall.function.name,
-                result = "",
-                success = false,
-                error = "Tool not found: ${toolCall.function.name}"
-            )
-
+        val toolName = toolCall.function.name
+        
+        // Check if it's a regular tool
+        val tool = getTool(toolName)
+        if (tool != null) {
+            return try {
+                val result = tool.execute(toolCall.function.arguments)
+                ToolResult(
+                    toolCallId = toolCall.id,
+                    toolName = toolName,
+                    result = result,
+                    success = true
+                )
+            } catch (e: Exception) {
+                ToolResult(
+                    toolCallId = toolCall.id,
+                    toolName = toolName,
+                    result = "",
+                    success = false,
+                    error = "Execution failed: ${e.message}"
+                )
+            }
+        }
+        
+        // Check if it's an MCP tool
         return try {
-            val result = tool.execute(toolCall.function.arguments)
+            val result = mcpRegistry.executeTool(toolName, toolCall.function.arguments)
             ToolResult(
                 toolCallId = toolCall.id,
-                toolName = toolCall.function.name,
+                toolName = toolName,
                 result = result,
                 success = true
             )
         } catch (e: Exception) {
             ToolResult(
                 toolCallId = toolCall.id,
-                toolName = toolCall.function.name,
+                toolName = toolName,
                 result = "",
                 success = false,
-                error = "Execution failed: ${e.message}"
+                error = "MCP tool execution failed: ${e.message}"
             )
         }
     }
