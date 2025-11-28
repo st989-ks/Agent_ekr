@@ -1,5 +1,6 @@
 package com.application.agent_ekr.console
 
+import com.application.agent_ekr.tools.CalculatorTool
 import com.application.agent_ekr.tools.mcp.MCPServers
 import com.application.agent_ekr.tools.mcp.UniversalMCPClient
 import org.slf4j.Logger
