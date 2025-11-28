@@ -2,7 +2,11 @@ package com.application.agent_ekr.tools
 
 import com.application.agent_ekr.models.common.ToolDefinition
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import javax.swing.UIManager.put
 
 /**
  * Simple calculator tool that provides basic arithmetic operations
@@ -26,9 +30,13 @@ class CalculatorTool : ConsoleTool {
                     put("type", "number")
                     put("description", "Second number")
                 })
+                put("required", buildJsonObject {
+                    put("type", "string")
+                    put("operation", listOf("a", "b"))
+                    put("description", "required operation")
+                })
             },
-            required = listOf("operation", "a", "b")
-        )
+         )
 
     override suspend fun execute(arguments: String): String {
         // Parse the JSON arguments

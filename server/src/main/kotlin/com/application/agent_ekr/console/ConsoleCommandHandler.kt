@@ -86,19 +86,73 @@ class ConsoleCommandHandler(
     }
 
     private suspend fun handleTest(arguments: String): CommandResult {
-//        TODO("""
-//            To implement extensible tests by the type of call was /test,
-//             we got here, and then any names for the tests will be implemented,
-//              for example mcptools, that is, the user will enter "/test mcptools"
-//               and some experimental work will be performed""")
-
         return when (arguments) {
             "tools" -> {
                 val client = UniversalMCPClient(MCPServers.github())
-                CommandResult.Output(client.getTools().joinToString("\n"))
+                try {
+                    client.connect()
+                    val tools = client.getTools()
+                    val toolsText = tools.joinToString("\n") { 
+                        "- ${it.name}: ${it.description}" 
+                    }
+                    CommandResult.Output("Available tools:\n$toolsText")
+                } catch (e: Exception) {
+                    CommandResult.Error("Failed to get tools: ${e.message}")
+                }
             }
-
-            else -> CommandResult.Output("TODO()")
+            "calculator" -> {
+                // Test the calculator tool directly
+                val calculator = CalculatorTool()
+                val results = buildString {
+                    appendLine("Testing calculator operations:")
+                    
+                    // Test addition
+                    try {
+                        val addResult = calculator.execute("""{"operation": "add", "a": 5, "b": 3}""")
+                        appendLine("5 + 3 = $addResult")
+                    } catch (e: Exception) {
+                        appendLine("Addition test failed: ${e.message}")
+                    }
+                    
+                    // Test subtraction
+                    try {
+                        val subtractResult = calculator.execute("""{"operation": "subtract", "a": 10, "b": 4}""")
+                        appendLine("10 - 4 = $subtractResult")
+                    } catch (e: Exception) {
+                        appendLine("Subtraction test failed: ${e.message}")
+                    }
+                    
+                    // Test multiplication
+                    try {
+                        val multiplyResult = calculator.execute("""{"operation": "multiply", "a": 6, "b": 7}""")
+                        appendLine("6 × 7 = $multiplyResult")
+                    } catch (e: Exception) {
+                        appendLine("Multiplication test failed: ${e.message}")
+                    }
+                    
+                    // Test division
+                    try {
+                        val divideResult = calculator.execute("""{"operation": "divide", "a": 15, "b": 3}""")
+                        appendLine("15 ÷ 3 = $divideResult")
+                    } catch (e: Exception) {
+                        appendLine("Division test failed: ${e.message}")
+                    }
+                    
+                    // Test division by zero
+                    try {
+                        val divideByZeroResult = calculator.execute("""{"operation": "divide", "a": 10, "b": 0}""")
+                        appendLine("10 ÷ 0 = $divideByZeroResult")
+                    } catch (e: Exception) {
+                        appendLine("Division by zero test: ${e.message}")
+                    }
+                }
+                CommandResult.Output(results)
+            }
+            "calculator-tools" -> {
+                val calculator = CalculatorTool()
+                CommandResult.Output("Calculator tool definition:\n- ${calculator.definition.name}: ${calculator.definition.description}")
+            }
+            else -> CommandResult.Output("Available test commands:\n- tools: Test MCP tools\n- calculator: Test calculator operations\n- calculator-tools: List calculator tools")
         }
     }
 
