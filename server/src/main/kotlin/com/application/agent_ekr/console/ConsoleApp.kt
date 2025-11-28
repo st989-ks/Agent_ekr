@@ -4,8 +4,6 @@ import com.application.agent_ekr.Env
 import com.application.agent_ekr.Utils.runCatchingSuspend
 import com.application.agent_ekr.gigachat.GigaChatManager
 import com.application.agent_ekr.tools.ConsoleTool
-import com.application.agent_ekr.tools.ConsoleToolRegistry
-import com.application.agent_ekr.tools.TestMCPCommand
 import org.slf4j.Logger
 
 class ConsoleApp(
@@ -16,16 +14,14 @@ class ConsoleApp(
         clientSecret = Env.GIGACHAT_TOKEN,
         logger = logger
     )
-    private val toolRegistry = ConsoleToolRegistry(logger)
-    private val commandHandler = ConsoleCommandHandler(logger, toolRegistry, config)
+    private val commandHandler = ConsoleCommandHandler(logger, config)
 
     /**
      * Register a tool to be available for execution
-     * 
+     *
      * @param tool The ConsoleTool implementation to register
      */
     fun registerTool(tool: ConsoleTool) {
-        toolRegistry.registerTool(tool)
     }
 
     suspend fun start() {
@@ -46,10 +42,12 @@ class ConsoleApp(
                     is CommandResult.Success -> {
                         // Command succeeded silently, do nothing
                     }
+
                     is CommandResult.Exit -> {
                         println("Goodbye!")
                         return
                     }
+
                     is CommandResult.Error -> println(ConsoleStyler.error(result.message))
                     is CommandResult.Unknown -> println(ConsoleStyler.error("Unknown command: '${result.command}'. Type /help"))
                 }
@@ -83,10 +81,10 @@ class ConsoleApp(
         if (config.debugMode) {
             logger.debug("User message: $text")
         }
-        
+
         println()
         println(ConsoleStyler.messageBlock("Request", text))
-        
+
         runCatchingSuspend {
             gigaChatApi.sendMessageStream(text).collect {
                 print(it)
@@ -95,7 +93,7 @@ class ConsoleApp(
             logger.error("Error in handleChat", it)
             println(ConsoleStyler.error("Error processing message: ${it.message}"))
         }
-        
+
         println()
         println(ConsoleStyler.separator())
     }
