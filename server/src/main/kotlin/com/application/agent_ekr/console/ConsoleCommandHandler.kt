@@ -1,7 +1,8 @@
 package com.application.agent_ekr.console
 
-import com.application.agent_ekr.tools.CalculatorTool
+import com.application.agent_ekr.models.common.ToolDefinition
 import com.application.agent_ekr.tools.mcp.MCPServers
+import com.application.agent_ekr.tools.mcp.MCPToolRegistry
 import com.application.agent_ekr.tools.mcp.UniversalMCPClient
 import org.slf4j.Logger
 
@@ -13,10 +14,14 @@ import org.slf4j.Logger
  *
  * @property logger The logger instance for debugging and error logging
  * @property config The console UI configuration
+ * @property mcpToolRegistry The MCP tool registry for managing tools
+ * @property availableTools The list of available tools for the LLM
  */
 class ConsoleCommandHandler(
     private val logger: Logger,
-    private var config: ConsoleUIConfig
+    private var config: ConsoleUIConfig,
+    private val mcpToolRegistry: MCPToolRegistry,
+    private val availableTools: MutableList<ToolDefinition>
 ) {
     private val commandHistory = mutableListOf<String>()
 
@@ -64,6 +69,7 @@ class ConsoleCommandHandler(
             "clear" -> handleClear()
             "history" -> handleHistory()
             "exit" -> handleExit()
+            "addtool" -> handleAddTool(arguments)
             else -> CommandResult.Unknown(commandName)
         }
     }
@@ -92,66 +98,15 @@ class ConsoleCommandHandler(
                 try {
                     client.connect()
                     val tools = client.getTools()
-                    val toolsText = tools.joinToString("\n") { 
-                        "- ${it.name}: ${it.description}" 
+                    val toolsText = tools.joinToString("\n") {
+                        "- ${it.name}: ${it.description}"
                     }
                     CommandResult.Output("Available tools:\n$toolsText")
                 } catch (e: Exception) {
                     CommandResult.Error("Failed to get tools: ${e.message}")
                 }
             }
-            "calculator" -> {
-                // Test the calculator tool directly
-                val calculator = CalculatorTool()
-                val results = buildString {
-                    appendLine("Testing calculator operations:")
-                    
-                    // Test addition
-                    try {
-                        val addResult = calculator.execute("""{"operation": "add", "a": 5, "b": 3}""")
-                        appendLine("5 + 3 = $addResult")
-                    } catch (e: Exception) {
-                        appendLine("Addition test failed: ${e.message}")
-                    }
-                    
-                    // Test subtraction
-                    try {
-                        val subtractResult = calculator.execute("""{"operation": "subtract", "a": 10, "b": 4}""")
-                        appendLine("10 - 4 = $subtractResult")
-                    } catch (e: Exception) {
-                        appendLine("Subtraction test failed: ${e.message}")
-                    }
-                    
-                    // Test multiplication
-                    try {
-                        val multiplyResult = calculator.execute("""{"operation": "multiply", "a": 6, "b": 7}""")
-                        appendLine("6 × 7 = $multiplyResult")
-                    } catch (e: Exception) {
-                        appendLine("Multiplication test failed: ${e.message}")
-                    }
-                    
-                    // Test division
-                    try {
-                        val divideResult = calculator.execute("""{"operation": "divide", "a": 15, "b": 3}""")
-                        appendLine("15 ÷ 3 = $divideResult")
-                    } catch (e: Exception) {
-                        appendLine("Division test failed: ${e.message}")
-                    }
-                    
-                    // Test division by zero
-                    try {
-                        val divideByZeroResult = calculator.execute("""{"operation": "divide", "a": 10, "b": 0}""")
-                        appendLine("10 ÷ 0 = $divideByZeroResult")
-                    } catch (e: Exception) {
-                        appendLine("Division by zero test: ${e.message}")
-                    }
-                }
-                CommandResult.Output(results)
-            }
-            "calculator-tools" -> {
-                val calculator = CalculatorTool()
-                CommandResult.Output("Calculator tool definition:\n- ${calculator.definition.name}: ${calculator.definition.description}")
-            }
+
             else -> CommandResult.Output("Available test commands:\n- tools: Test MCP tools\n- calculator: Test calculator operations\n- calculator-tools: List calculator tools")
         }
     }
@@ -203,6 +158,82 @@ class ConsoleCommandHandler(
         }.joinToString("\n")
 
         return CommandResult.Output(historyText)
+    }
+
+    /**
+     * Handle the addtool command - add an MCP tool to available tools
+     *
+     * @param args The tool name to add (e.g., "calculator")
+     * @return CommandResult with success or error message
+     */
+    private suspend fun handleAddTool(args: String): CommandResult {
+        val toolName = args.trim()
+        if (toolName.isBlank()) {
+            return CommandResult.Error("Please specify a tool name (e.g., '/addtool calculator')")
+        }
+
+        return try {
+            when (toolName.lowercase()) {
+                "calculator" -> {
+                    val client = UniversalMCPClient(MCPServers.calculator())
+                    mcpToolRegistry.registerClient("calculator", client)
+                    mcpToolRegistry.discoverTools("calculator")
+                    val tools = mcpToolRegistry.getToolDefinitions()
+                    availableTools.addAll(tools)
+                    CommandResult.Output(ConsoleStyler.success("Added ${tools.size} calculator tools: ${tools.map { it.name }}"))
+                }
+
+                "github" -> {
+                    val client = UniversalMCPClient(MCPServers.github())
+                    mcpToolRegistry.registerClient("github", client)
+                    mcpToolRegistry.discoverTools("github")
+                    val tools = mcpToolRegistry.getToolDefinitions()
+                    availableTools.addAll(tools)
+                    CommandResult.Output(ConsoleStyler.success("Added ${tools.size} github tools: ${tools.map { it.name }}"))
+                }
+
+                "filesystem" -> {
+                    val client = UniversalMCPClient(MCPServers.filesystem())
+                    mcpToolRegistry.registerClient("filesystem", client)
+                    mcpToolRegistry.discoverTools("filesystem")
+                    val tools = mcpToolRegistry.getToolDefinitions()
+                    availableTools.addAll(tools)
+                    CommandResult.Output(ConsoleStyler.success("Added ${tools.size} filesystem tools: ${tools.map { it.name }}"))
+                }
+
+                "postgres" -> {
+                    val client = UniversalMCPClient(MCPServers.postgres())
+                    mcpToolRegistry.registerClient("postgres", client)
+                    mcpToolRegistry.discoverTools("postgres")
+                    val tools = mcpToolRegistry.getToolDefinitions()
+                    availableTools.addAll(tools)
+                    CommandResult.Output(ConsoleStyler.success("Added ${tools.size} postgres tools: ${tools.map { it.name }}"))
+                }
+
+                "bravesearch" -> {
+                    val client = UniversalMCPClient(MCPServers.braveSearch())
+                    mcpToolRegistry.registerClient("bravesearch", client)
+                    mcpToolRegistry.discoverTools("bravesearch")
+                    val tools = mcpToolRegistry.getToolDefinitions()
+                    availableTools.addAll(tools)
+                    CommandResult.Output(ConsoleStyler.success("Added ${tools.size} brave search tools: ${tools.map { it.name }}"))
+                }
+
+                "sqlite" -> {
+                    val client = UniversalMCPClient(MCPServers.sqlite())
+                    mcpToolRegistry.registerClient("sqlite", client)
+                    mcpToolRegistry.discoverTools("sqlite")
+                    val tools = mcpToolRegistry.getToolDefinitions()
+                    availableTools.addAll(tools)
+                    CommandResult.Output(ConsoleStyler.success("Added ${tools.size} sqlite tools: ${tools.map { it.name }}"))
+                }
+
+                else -> CommandResult.Error("Unknown tool: '$toolName'. Available: calculator, github, filesystem, postgres, bravesearch, sqlite")
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to add tool: $toolName", e)
+            CommandResult.Error("Failed to add tool '$toolName': ${e.message}")
+        }
     }
 
     /**

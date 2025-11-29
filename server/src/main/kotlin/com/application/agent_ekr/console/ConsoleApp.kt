@@ -3,7 +3,7 @@ package com.application.agent_ekr.console
 import com.application.agent_ekr.Env
 import com.application.agent_ekr.Utils.runCatchingSuspend
 import com.application.agent_ekr.gigachat.GigaChatManager
-import com.application.agent_ekr.tools.ConsoleTool
+import com.application.agent_ekr.tools.mcp.MCPToolRegistry
 import org.slf4j.Logger
 
 class ConsoleApp(
@@ -14,15 +14,12 @@ class ConsoleApp(
         clientSecret = Env.GIGACHAT_TOKEN,
         logger = logger
     )
-    private val commandHandler = ConsoleCommandHandler(logger, config)
-
-    /**
-     * Register a tool to be available for execution
-     *
-     * @param tool The ConsoleTool implementation to register
-     */
-    fun registerTool(tool: ConsoleTool) {
-    }
+    private val commandHandler = ConsoleCommandHandler(
+        logger = logger,
+        config = config,
+        mcpToolRegistry = MCPToolRegistry(),
+        availableTools = mutableListOf()
+    )
 
     suspend fun start() {
         printWelcome()
