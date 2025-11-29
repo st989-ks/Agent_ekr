@@ -179,7 +179,7 @@ class CalculatorMCPServer {
             outputStream = System.out.asSink().buffered()
         )
 
-        server.connect(transport)
+        server.createSession(transport)
 
         // Keep the server running
         val done = kotlinx.coroutines.Job()
