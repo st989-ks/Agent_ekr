@@ -5,6 +5,7 @@ import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequestParams
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
@@ -15,7 +16,7 @@ class UniversalMCPClient(
     private val transport: MCPTransport,
     clientName: String = "agent-ekr-mcp-client",
     clientVersion: String = "1.0.0"
-) {
+): AutoCloseable  {
     private val client = Client(
         clientInfo = Implementation(name = clientName, version = clientVersion)
     )
@@ -25,6 +26,7 @@ class UniversalMCPClient(
     suspend fun connect() {
         if (!isConnected) {
             val mcpTransport = transport.createTransport()
+            // TODO("The flow is blocked here, it is necessary to provide work on parallel flow")
             client.connect(mcpTransport)
             isConnected = true
         }
@@ -63,8 +65,10 @@ class UniversalMCPClient(
         return result.content.joinToString("\n") { it.toString() }
     }
 
-    suspend fun close() {
-        client.close()
-        isConnected = false
+    override fun close() {
+        runBlocking {
+            client.close()
+            isConnected = false
+        }
     }
 }

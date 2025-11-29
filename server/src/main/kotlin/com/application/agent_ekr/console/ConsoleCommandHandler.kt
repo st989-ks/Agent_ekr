@@ -20,8 +20,8 @@ import org.slf4j.Logger
 class ConsoleCommandHandler(
     private val logger: Logger,
     private var config: ConsoleUIConfig,
-    private val mcpToolRegistry: MCPToolRegistry,
-    private val availableTools: MutableList<ToolDefinition>
+    val mcpToolRegistry: MCPToolRegistry,
+    val availableTools: MutableList<ToolDefinition>
 ) {
     private val commandHistory = mutableListOf<String>()
 
