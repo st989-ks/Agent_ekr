@@ -26,5 +26,5 @@ object MCPServers {
         MCPTransport.Sse(url, HttpClient(CIO))
     
     fun calculator(): MCPTransport.Stdio = 
-        MCPTransport.Stdio(listOf("kotlin", "-cp", "build/libs/llm.jar", "com.application.agent_ekr.tools.CalculatorMCPServerKt"))
+        MCPTransport.Stdio(listOf("java", "-jar", "tools/calculator/build/libs/calculator-1.0.0.jar"))
 }

@@ -1,5 +1,8 @@
 package com.application.agent_ekr.calculator
 
-fun main(){
-
+/**
+ * Main function to start the calculator MCP server
+ */
+fun main() {
+    CalculatorMCPServer().start()
 }
