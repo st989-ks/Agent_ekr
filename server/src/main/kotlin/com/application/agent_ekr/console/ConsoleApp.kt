@@ -49,7 +49,7 @@ class ConsoleApp(
                     is CommandResult.Unknown -> println(ConsoleStyler.error("Unknown command: '${result.command}'. Type /help"))
                 }
             } else {
-                handleChat(input)
+                handleChatCalculator(input)
             }
         }
     }
@@ -93,5 +93,9 @@ class ConsoleApp(
 
         println()
         println(ConsoleStyler.separator())
+    }
+
+    private suspend fun handleChatCalculator(text: String) {
+        TODO()
     }
 }
