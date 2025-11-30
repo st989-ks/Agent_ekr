@@ -8,7 +8,7 @@ plugins {
 group = "com.application.agent_ekr"
 version = "1.0.0"
 application {
-    mainClass.set("com.application.agent_ekr.calculator.MainKt")
+    mainClass.set("com.application.agent_ekr.calculator.CalculatorMcpServerKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")

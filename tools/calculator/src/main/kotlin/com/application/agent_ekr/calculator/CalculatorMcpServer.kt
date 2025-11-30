@@ -14,14 +14,11 @@ import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 /**
  * Calculator MCP Server - Provides basic arithmetic operations
  */
-class CalculatorMCPServer {
+class CalculatorMcpServer {
     private val server = Server(
         serverInfo = Implementation(
             name = "calculator-server",
@@ -176,29 +173,21 @@ class CalculatorMCPServer {
         }
     }
 
-    fun start() = runBlocking {
+    suspend fun start() {
         try {
             System.err.println("Calculator MCP Server starting...")
+            val proc = ProcessBuilder().start()
+
+            val inputSource = proc.inputStream.asSource().buffered()
+            val outputSink = proc.outputStream.asSink().buffered()
+
             val transport = StdioServerTransport(
-                inputStream = System.`in`.asSource().buffered(),
-                outputStream = System.out.asSink().buffered()
+                inputStream = inputSource,
+                outputStream = outputSink
             )
 
-            System.err.println("Creating server session...")
-            // Create the session - this should handle the initialization automatically
-            val session = server.createSession(transport)
-            System.err.println("Server session created, waiting for messages...")
-            
-            // Keep the server running
-            val done = kotlinx.coroutines.CompletableDeferred<Unit>()
-            session.onClose {
-                System.err.println("Session closed")
-                done.complete(Unit)
-            }
-            
-            // Wait for the session to close
-            done.await()
-            System.err.println("Calculator MCP Server shutting down...")
+            System.err.println("Connecting server to transport...")
+            server.createSession(transport)
         } catch (e: Exception) {
             // Write error to stderr so it's visible
             System.err.println("Calculator MCP Server Error: ${e.message}")
@@ -208,12 +197,9 @@ class CalculatorMCPServer {
     }
 }
 
+/**
+ * Main function to start the calculator MCP server
+ */
 fun main() = runBlocking {
-    try {
-        CalculatorMCPServer().start()
-    } catch (e: Exception) {
-        System.err.println("Failed to start Calculator MCP Server: ${e.message}")
-        e.printStackTrace()
-        System.exit(1)
-    }
+    CalculatorMcpServer().start()
 }
