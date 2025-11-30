@@ -35,7 +35,15 @@ sealed class MCPTransport {
     suspend fun createTransport(): AbstractTransport = when (this) {
         is Stdio -> {
             val process = withContext(Dispatchers.IO) {
-                Runtime.getRuntime().exec(command.toTypedArray())
+                try {
+                    ProcessBuilder(command).start()
+                } catch (e: Exception) {
+                    throw RuntimeException("Failed to start process '${command.joinToString(" ")}': ${e.message}", e)
+                }
+            }
+            // Check if process started successfully
+            if (!process.isAlive) {
+                throw RuntimeException("Process '${command.joinToString(" ")}' exited immediately")
             }
             StdioClientTransport(
                 input = process.inputStream.asSource().buffered(),
