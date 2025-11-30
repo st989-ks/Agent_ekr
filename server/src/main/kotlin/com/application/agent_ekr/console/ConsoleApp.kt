@@ -101,7 +101,8 @@ class ConsoleApp(
 
         userMessageDebugMode(text)
 
-        commandHandler.handleCommand("/addtool calculator")
+        val result = commandHandler.handleCommand("/addtool calculator")
+        println(result)
 
         println()
         println(ConsoleStyler.messageBlock("Request", text))
