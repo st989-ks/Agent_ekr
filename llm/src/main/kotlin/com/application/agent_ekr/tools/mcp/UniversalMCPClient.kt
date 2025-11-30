@@ -38,7 +38,13 @@ class UniversalMCPClient(
             } catch (e: TimeoutCancellationException) {
                 throw RuntimeException("MCP connection timeout: Server did not respond within 10 seconds")
             } catch (e: Exception) {
-                throw RuntimeException("Failed to connect to MCP server: ${e.message}", e)
+                // Add more detailed error information
+                val errorMessage = when {
+                    e.message?.contains("Connection closed") == true -> 
+                        "MCP connection was closed by the server. The server may not be implementing the MCP protocol correctly."
+                    else -> "Failed to connect to MCP server: ${e.message}"
+                }
+                throw RuntimeException(errorMessage, e)
             }
         }
     }

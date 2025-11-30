@@ -43,8 +43,13 @@ sealed class MCPTransport {
             }
             // Check if process started successfully
             if (!process.isAlive) {
-                throw RuntimeException("Process '${command.joinToString(" ")}' exited immediately")
+                val exitCode = process.exitValue()
+                throw RuntimeException("Process '${command.joinToString(" ")}' exited immediately with code $exitCode")
             }
+            
+            // Add a small delay to ensure the process is ready
+            kotlinx.coroutines.delay(100)
+            
             StdioClientTransport(
                 input = process.inputStream.asSource().buffered(),
                 output = process.outputStream.asSink().buffered()
