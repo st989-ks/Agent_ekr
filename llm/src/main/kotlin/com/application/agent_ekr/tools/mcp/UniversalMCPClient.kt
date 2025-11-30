@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.put
+import javax.swing.UIManager.put
 import kotlin.time.Duration.Companion.seconds
 
 class UniversalMCPClient(
