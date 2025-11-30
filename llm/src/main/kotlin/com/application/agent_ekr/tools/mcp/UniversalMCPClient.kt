@@ -26,7 +26,6 @@ class UniversalMCPClient(
     suspend fun connect() {
         if (!isConnected) {
             val mcpTransport = transport.createTransport()
-            // TODO("The flow is blocked here, it is necessary to provide work on parallel flow")
             client.connect(mcpTransport)
             isConnected = true
         }

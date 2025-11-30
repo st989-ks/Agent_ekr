@@ -14,6 +14,9 @@ import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Calculator MCP Server - Provides basic arithmetic operations
@@ -174,18 +177,38 @@ class CalculatorMCPServer {
     }
 
     fun start() = runBlocking {
-        val transport = StdioServerTransport(
-            inputStream = System.`in`.asSource().buffered(),
-            outputStream = System.out.asSink().buffered()
-        )
+        try {
+            val transport = StdioServerTransport(
+                inputStream = System.`in`.asSource().buffered(),
+                outputStream = System.out.asSink().buffered()
+            )
 
-        server.createSession(transport)
-
-        // Keep the server running
-        val done = kotlinx.coroutines.Job()
-        server.onClose {
-            done.complete()
+            // Create the session
+            val session = server.createSession(transport)
+            
+            // Keep the server running
+            val done = kotlinx.coroutines.CompletableDeferred<Unit>()
+            session.onClose {
+                done.complete(Unit)
+            }
+            
+            // Wait for the session to close
+            done.await()
+        } catch (e: Exception) {
+            // Write error to stderr so it's visible
+            System.err.println("Calculator MCP Server Error: ${e.message}")
+            e.printStackTrace()
+            throw e
         }
-        done.join()
+    }
+}
+
+fun main() = runBlocking {
+    try {
+        CalculatorMCPServer().start()
+    } catch (e: Exception) {
+        System.err.println("Failed to start Calculator MCP Server: ${e.message}")
+        e.printStackTrace()
+        System.exit(1)
     }
 }
