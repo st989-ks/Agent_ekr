@@ -28,16 +28,21 @@ class UniversalMCPClient(
 
     suspend fun connect() {
         if (!isConnected) {
+            System.err.println("Creating MCP transport...")
             val mcpTransport = transport.createTransport()
+            System.err.println("MCP transport created, connecting...")
             // Add timeout to prevent indefinite blocking
             try {
                 withTimeout(10.seconds) {
                     client.connect(mcpTransport)
                 }
+                System.err.println("MCP client connected successfully")
                 isConnected = true
             } catch (e: TimeoutCancellationException) {
+                System.err.println("MCP connection timeout")
                 throw RuntimeException("MCP connection timeout: Server did not respond within 10 seconds")
             } catch (e: Exception) {
+                System.err.println("MCP connection error: ${e.message}")
                 // Add more detailed error information
                 val errorMessage = when {
                     e.message?.contains("Connection closed") == true -> 

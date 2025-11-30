@@ -178,22 +178,27 @@ class CalculatorMCPServer {
 
     fun start() = runBlocking {
         try {
+            System.err.println("Calculator MCP Server starting...")
             val transport = StdioServerTransport(
                 inputStream = System.`in`.asSource().buffered(),
                 outputStream = System.out.asSink().buffered()
             )
 
-            // Create the session
+            System.err.println("Creating server session...")
+            // Create the session - this should handle the initialization automatically
             val session = server.createSession(transport)
+            System.err.println("Server session created, waiting for messages...")
             
             // Keep the server running
             val done = kotlinx.coroutines.CompletableDeferred<Unit>()
             session.onClose {
+                System.err.println("Session closed")
                 done.complete(Unit)
             }
             
             // Wait for the session to close
             done.await()
+            System.err.println("Calculator MCP Server shutting down...")
         } catch (e: Exception) {
             // Write error to stderr so it's visible
             System.err.println("Calculator MCP Server Error: ${e.message}")

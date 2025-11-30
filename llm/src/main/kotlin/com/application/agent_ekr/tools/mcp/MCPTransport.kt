@@ -47,8 +47,8 @@ sealed class MCPTransport {
                 throw RuntimeException("Process '${command.joinToString(" ")}' exited immediately with code $exitCode")
             }
             
-            // Add a small delay to ensure the process is ready
-            kotlinx.coroutines.delay(100)
+            // Add a longer delay to ensure the process is ready and has printed any startup messages
+            kotlinx.coroutines.delay(500)
             
             StdioClientTransport(
                 input = process.inputStream.asSource().buffered(),
