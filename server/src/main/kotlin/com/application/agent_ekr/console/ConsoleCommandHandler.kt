@@ -127,6 +127,9 @@ class ConsoleCommandHandler(
 
         // Update config (create new instance since data class is immutable)
         config = config.copy(debugMode = newDebugMode)
+        
+        // Set system property to control logging behavior
+        System.setProperty("DEBUG_MODE", newDebugMode.toString())
         logger.info("Debug mode set to: $newDebugMode")
 
         val statusMessage = if (newDebugMode) "enabled" else "disabled"
