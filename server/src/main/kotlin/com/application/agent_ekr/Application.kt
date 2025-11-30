@@ -4,7 +4,6 @@ import com.application.agent_ekr.console.ConsoleApp
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 suspend fun main() {

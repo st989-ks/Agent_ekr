@@ -31,7 +31,6 @@ class ConsoleApp(
         while (true) {
             printPrompt()
             val input = readlnOrNull() ?: continue
-
             // Skip empty input
             if (input.isBlank()) {
                 continue

@@ -25,6 +25,18 @@ object MCPServers {
     fun sse(url: String): MCPTransport.Sse = 
         MCPTransport.Sse(url, HttpClient(CIO))
     
-    fun calculator(): MCPTransport.Stdio = 
-        MCPTransport.Stdio(listOf("java", "-jar", "tools/calculator/build/libs/calculator-1.0.0.jar"))
+    fun calculator(): MCPTransport.SseWithProcessBuilder {
+        val  port = 3081
+        return MCPTransport.SseWithProcessBuilder(
+            command = listOf(
+                "java",
+                "-jar",
+                "mcp_tools/calculator/build/libs/calculator-0.1.0.jar",
+                "--sse"
+            ),
+            port = port,
+            url = "http://localhost:$port",
+            httpClient = HttpClient(CIO)
+        )
+    }
 }

@@ -1,43 +1,16 @@
-package com.application.agent_ekr.calculator
+package com.application.agent_ekr.mcp_tools.calculator
 
 import io.modelcontextprotocol.kotlin.sdk.server.Server
-import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
-import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.types.Implementation
-import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
-import kotlinx.coroutines.runBlocking
-import kotlinx.io.asSink
-import kotlinx.io.asSource
-import kotlinx.io.buffered
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-/**
- * Calculator MCP Server - Provides basic arithmetic operations
- */
-class CalculatorMcpServer {
-    private val server = Server(
-        serverInfo = Implementation(
-            name = "calculator-server",
-            version = "1.0.0"
-        ),
-        options = ServerOptions(
-            capabilities = ServerCapabilities(
-                tools = ServerCapabilities.Tools(true)
-            )
-        )
-    )
+object ToolCalculator {
 
-    init {
-        setupTools()
-    }
-
-    private fun setupTools() {
-        // Add tool for addition
-        server.addTool(
+    fun Server.addPlus() {
+        addTool(
             name = "add",
             description = "Add two numbers together",
             inputSchema = ToolSchema(
@@ -68,9 +41,10 @@ class CalculatorMcpServer {
                 )
             }
         }
+    }
 
-        // Add tool for subtraction
-        server.addTool(
+    fun Server.addSubtract() {
+        addTool(
             name = "subtract",
             description = "Subtract the second number from the first number",
             inputSchema = ToolSchema(
@@ -101,9 +75,10 @@ class CalculatorMcpServer {
                 )
             }
         }
+    }
 
-        // Add tool for multiplication
-        server.addTool(
+    fun Server.addMultiplication() {
+        addTool(
             name = "multiply",
             description = "Multiply two numbers together",
             inputSchema = ToolSchema(
@@ -134,9 +109,10 @@ class CalculatorMcpServer {
                 )
             }
         }
+    }
 
-        // Add tool for division
-        server.addTool(
+    fun Server.addDivision() {
+        addTool(
             name = "divide",
             description = "Divide the first number by the second number",
             inputSchema = ToolSchema(
@@ -172,34 +148,4 @@ class CalculatorMcpServer {
             }
         }
     }
-
-    suspend fun start() {
-        try {
-            System.err.println("Calculator MCP Server starting...")
-            val proc = ProcessBuilder().start()
-
-            val inputSource = proc.inputStream.asSource().buffered()
-            val outputSink = proc.outputStream.asSink().buffered()
-
-            val transport = StdioServerTransport(
-                inputStream = inputSource,
-                outputStream = outputSink
-            )
-
-            System.err.println("Connecting server to transport...")
-            server.createSession(transport)
-        } catch (e: Exception) {
-            // Write error to stderr so it's visible
-            System.err.println("Calculator MCP Server Error: ${e.message}")
-            e.printStackTrace()
-            throw e
-        }
-    }
-}
-
-/**
- * Main function to start the calculator MCP server
- */
-fun main() = runBlocking {
-    CalculatorMcpServer().start()
 }

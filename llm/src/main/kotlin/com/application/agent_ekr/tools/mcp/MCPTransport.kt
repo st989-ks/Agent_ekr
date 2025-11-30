@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
+import java.net.Socket
 import kotlin.time.Duration
 
 sealed class MCPTransport {
@@ -32,6 +33,15 @@ sealed class MCPTransport {
         val requestBuilder: HttpRequestBuilder.() -> Unit = {},
     ) : MCPTransport()
 
+    data class SseWithProcessBuilder(
+        val command: List<String>,
+        val url: String,
+        val port: Int? = null,
+        val httpClient: HttpClient,
+        val reconnectionTime: Duration? = null,
+        val requestBuilder: HttpRequestBuilder.() -> Unit = {},
+    ) : MCPTransport()
+
     suspend fun createTransport(): AbstractTransport = when (this) {
         is Stdio -> {
             val process = withContext(Dispatchers.IO) {
@@ -48,7 +58,7 @@ sealed class MCPTransport {
             }
             
             // Add a longer delay to ensure the process is ready and has printed any startup messages
-            kotlinx.coroutines.delay(500)
+            kotlinx.coroutines.delay(2000)
             
             StdioClientTransport(
                 input = process.inputStream.asSource().buffered(),
@@ -68,5 +78,30 @@ sealed class MCPTransport {
             reconnectionTime = reconnectionTime,
             requestBuilder = requestBuilder
         )
+
+        is SseWithProcessBuilder -> {
+
+            val process = withContext(Dispatchers.IO) {
+                try {
+                    ProcessBuilder(command + port.toString()).start()
+                } catch (e: Exception) {
+                    throw RuntimeException("Failed to start process '${command.joinToString(" ")}': ${e.message}", e)
+                }
+            }
+
+            if (!process.isAlive) {
+                val exitCode = process.exitValue()
+                throw RuntimeException("Process '${command.joinToString(" ")}' exited immediately with code $exitCode")
+            }
+
+            kotlinx.coroutines.delay(2000)
+
+            SseClientTransport(
+                client = httpClient,
+                urlString = url,
+                reconnectionTime = reconnectionTime,
+                requestBuilder = requestBuilder
+            )
+        }
     }
 }
